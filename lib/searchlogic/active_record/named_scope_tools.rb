@@ -13,10 +13,10 @@ module Searchlogic
       # ActiveRecord hides this internally in a Proc, so we have to try and pull it out with this
       # method.
       def named_scope_options(name)
-        key = @scope_options.key?(name.to_sym) ? name.to_sym : condition_scope_name(name)
+        key = scopes.key?(name.to_sym) ? name.to_sym : condition_scope_name(name)
 
-        if key && @scope_options[key]
-          @scope_options[key]
+        if key && scopes[key]
+          scopes[key]
         else
           nil
         end
@@ -24,9 +24,13 @@ module Searchlogic
 
       # TODO: Remove this whole mess after figuring out why we need to do this
       def scope(name, options = {}, &block)
-        @scope_options ||= {}
-        @scope_options[name.to_sym] = options
+        scopes[name.to_sym] = options
         super
+      end
+
+      # TODO: This should probably go too
+      def scopes
+        @scopes ||= {}
       end
 
       # The arity for a named scope's proc is important, because we use the arity
