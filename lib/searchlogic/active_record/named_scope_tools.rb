@@ -13,6 +13,8 @@ module Searchlogic
       # ActiveRecord hides this internally in a Proc, so we have to try and pull it out with this
       # method.
       def named_scope_options(name)
+        return unless name # TODO: Why do we need this now?
+
         key = scopes.key?(name.to_sym) ? name.to_sym : condition_scope_name(name)
 
         if key && scopes[key]
@@ -59,7 +61,7 @@ module Searchlogic
       # ActiveRecord will remove dupilicate joins and Searchlogic assists ActiveRecord in
       # breaking up your joins so that they are unique.
       def inner_joins(association_name)
-        ::ActiveRecord::Associations::ClassMethods::InnerJoinDependency.new(self, association_name, nil).join_associations.collect { |assoc| assoc.association_join }
+        unscoped.joins(association_name).join_sources.map(&:to_sql)
       end
 
       # A convenience methods to create a join on a polymorphic associations target.
@@ -84,7 +86,7 @@ module Searchlogic
 
       # See inner_joins. Does the same thing except creates LEFT OUTER joins.
       def left_outer_joins(association_name)
-        ::ActiveRecord::Associations::ClassMethods::JoinDependency.new(self, association_name, nil).join_associations.collect { |assoc| assoc.association_join }
+        inner_joins(association_name).map { |join_sql| join_sql.gsub(/INNER JOIN/, 'LEFT OUTER JOIN') }
       end
     end
   end

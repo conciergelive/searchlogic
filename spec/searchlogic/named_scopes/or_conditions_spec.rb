@@ -7,15 +7,18 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should match username or name" do
-    User.username_or_name_like("ben").proxy_options.should == {:conditions => "(users.username LIKE '%ben%') OR (users.name LIKE '%ben%')"}
+    User.username_or_name_like("ben").where_sql.should == 
+      "WHERE (((users.username LIKE '%ben%')) OR ((users.name LIKE '%ben%')))"
   end
 
   it "should use the specified condition" do
-    User.username_begins_with_or_name_like("ben").proxy_options.should == {:conditions => "(users.username LIKE 'ben%') OR (users.name LIKE '%ben%')"}
+    User.username_begins_with_or_name_like("ben").where_sql.should ==
+      "WHERE (((users.username LIKE 'ben%')) OR ((users.name LIKE '%ben%')))"
   end
 
   it "should use the last specified condition" do
-    User.username_or_name_like_or_id_or_age_lt(10).proxy_options.should == {:conditions => "(users.username LIKE '%10%') OR (users.name LIKE '%10%') OR (users.id < 10) OR (users.age < 10)"}
+    User.username_or_name_like_or_id_or_age_lt(10).where_sql.should ==
+      "WHERE (((users.username LIKE '%10%')) OR ((users.name LIKE '%10%')) OR ((users.id < 10)) OR ((users.age < 10)))"
   end
 
   it "should raise an error on unknown conditions" do
@@ -23,34 +26,43 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should work well with _or_equal_to" do
-    User.id_less_than_or_equal_to_or_age_gt(10).proxy_options.should == {:conditions => "(users.id <= 10) OR (users.age > 10)"}
+    User.id_less_than_or_equal_to_or_age_gt(10).where_sql.should ==
+      "WHERE (((users.id <= 10)) OR ((users.age > 10)))"
   end
 
   it "should work well with _or_equal_to_any" do
-    User.id_less_than_or_equal_to_all_or_age_gt(10).proxy_options.should == {:conditions => "(users.id <= 10) OR (users.age > 10)"}
+    User.id_less_than_or_equal_to_all_or_age_gt(10).where_sql.should ==
+      "WHERE (((users.id <= 10)) OR ((users.age > 10)))"
   end
 
   it "should work well with _or_equal_to_all" do
-    User.id_less_than_or_equal_to_any_or_age_gt(10).proxy_options.should == {:conditions => "(users.id <= 10) OR (users.age > 10)"}
+    User.id_less_than_or_equal_to_any_or_age_gt(10).where_sql.should ==
+      "WHERE (((users.id <= 10)) OR ((users.age > 10)))"
   end
 
   it "should play nice with other scopes" do
-    User.username_begins_with("ben").id_gt(10).age_not_nil.username_or_name_ends_with("ben").scope(:find).should ==
-      {:conditions => "((users.username LIKE '%ben') OR (users.name LIKE '%ben')) AND ((users.age IS NOT NULL) AND ((users.id > 10) AND (users.username LIKE 'ben%')))"}
+    User.username_begins_with("ben").id_gt(10).age_not_nil.username_or_name_ends_with("ben").where_sql.should ==
+      "WHERE (users.username LIKE 'ben%') AND (users.id > 10) AND (users.age IS NOT NULL) AND (((users.username LIKE '%ben')) OR ((users.name LIKE '%ben')))"
   end
 
   it "should work with boolean conditions" do
-    User.male_or_name_eq("susan").proxy_options.should == {:conditions => %Q{("users"."male" = 't') OR (users.name = 'susan')}}
-    User.not_male_or_name_eq("susan").proxy_options.should == {:conditions => %Q{("users"."male" = 'f') OR (users.name = 'susan')}}
+    User.male_or_name_eq("susan").where_sql.should ==
+      %Q{WHERE (("users"."male" = 't') OR ((users.name = 'susan')))}
+    User.not_male_or_name_eq("susan").where_sql.should ==
+      %Q{WHERE (("users"."male" = 'f') OR ((users.name = 'susan')))}
     lambda { User.male_or_name_eq("susan").all }.should_not raise_error
   end
 
   it "should play nice with scopes on associations" do
     lambda { User.name_or_company_name_like("ben") }.should_not raise_error(Searchlogic::NamedScopes::OrConditions::NoConditionSpecifiedError)
-    User.name_or_company_name_like("ben").proxy_options.should == {:joins => ["LEFT OUTER JOIN \"companies\" ON \"companies\".id = \"users\".company_id"], :conditions => "(users.name LIKE '%ben%') OR (companies.name LIKE '%ben%')"}
-    User.company_name_or_name_like("ben").proxy_options.should == {:joins => ["LEFT OUTER JOIN \"companies\" ON \"companies\".id = \"users\".company_id"], :conditions => "(companies.name LIKE '%ben%') OR (users.name LIKE '%ben%')"}
-    User.company_name_or_company_description_like("ben").proxy_options.should == {:joins => ["LEFT OUTER JOIN \"companies\" ON \"companies\".id = \"users\".company_id"], :conditions => "(companies.name LIKE '%ben%') OR (companies.description LIKE '%ben%')"}
-    Cart.user_company_name_or_user_company_name_like("ben").proxy_options.should == {:joins => ["LEFT OUTER JOIN \"users\" ON \"carts\".user_id = \"users\".id", "LEFT OUTER JOIN \"companies\" ON \"companies\".id = \"users\".company_id"], :conditions => "(companies.name LIKE '%ben%') OR (companies.name LIKE '%ben%')"}
+    User.name_or_company_name_like("ben").to_sql.should ==
+      "SELECT \"users\".* FROM \"users\"  WHERE (users.id IN (SELECT id FROM \"users\"  WHERE (users.name LIKE '%ben%')) OR users.id IN (SELECT id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')))"
+    User.company_name_or_name_like("ben").to_sql.should ==
+      "SELECT \"users\".* FROM \"users\"  WHERE (users.id IN (SELECT id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')) OR users.id IN (SELECT id FROM \"users\"  WHERE (users.name LIKE '%ben%')))"
+    User.company_name_or_company_description_like("ben").to_sql.should ==
+      "SELECT \"users\".* FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (((companies.name LIKE '%ben%')) OR ((companies.description LIKE '%ben%')))"
+    Cart.user_company_name_or_user_company_name_like("ben").to_sql.should ==
+      "SELECT \"carts\".* FROM \"carts\"  WHERE (carts.id IN (SELECT id FROM \"carts\" INNER JOIN \"users\" ON \"users\".\"id\" = \"carts\".\"user_id\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')) OR carts.id IN (SELECT id FROM \"carts\" INNER JOIN \"users\" ON \"users\".\"id\" = \"carts\".\"user_id\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')))"
   end
 
   it "should raise an error on missing condition" do
@@ -68,17 +80,12 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should work with User.search(conditions) method" do
-    User.search(:username_or_name_like => 'ben').proxy_options.should == {:conditions => "(users.username LIKE '%ben%') OR (users.name LIKE '%ben%')"}
+    User.search(:username_or_name_like => 'ben').where_sql.should ==
+      "WHERE (users.username LIKE '%ben%') OR (users.name LIKE '%ben%')"
   end
 
   it "should convert types properly when used with User.search(conditions) method" do
-    User.search(:id_or_age_lte => '10').proxy_options.should == {:conditions => "(users.id <= 10) OR (users.age <= 10)"}
-  end
-
-  it "should converts inner joins to left out joins" do
-    scopes = []
-    scopes << User.orders_id_equals(1)
-    scopes << User.carts_id_equals(1)
-    User.send(:merge_scopes_with_or, scopes).should == {:conditions=>"(orders.id = 1) OR (carts.id = 1)", :joins=>["LEFT OUTER JOIN \"carts\" ON carts.user_id = users.id", "LEFT OUTER JOIN \"orders\" ON orders.user_id = users.id"]}
+    User.search(:id_or_age_lte => '10').where_sql.should ==
+      "WHERE (users.id <= 10) OR (users.age <= 10)"
   end
 end

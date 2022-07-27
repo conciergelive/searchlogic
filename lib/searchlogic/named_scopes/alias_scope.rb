@@ -31,16 +31,12 @@ module Searchlogic
       #
       # This feels better, it feels like our other scopes, and it provides a way to tell Searchlogic that this
       # is a safe method.
-      def alias_scope(name, options = nil)
-        impl =
-          case options
-          when Symbol
-            ->(*args) { send(options, *args) }
-          else
-            options
-          end
+      def alias_scope(name, impl)
+        impl = method(impl) if Symbol === impl
 
-        scope name, impl
+        # TODO: Print a warning asking `alias_scope` to be changed to just `scope` 
+
+        scope(name, impl)
       end
       alias_method :scope_procedure, :alias_scope
     end

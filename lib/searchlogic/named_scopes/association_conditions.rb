@@ -60,12 +60,9 @@ module Searchlogic
         def association_condition_options(association, scope_name, poly_class = nil)
           target = poly_class || association.klass
 
-          # TODO: Amazingly, this is required....
-          target.respond_to?(scope_name)
-
           join_condition =
             if poly_class
-              raise NotImplementedError, "TODO: polymorphic join"
+              inner_polymorphic_join(poly_class.name.underscore, as: association.name)
             else
               association.name
             end

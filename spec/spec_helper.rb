@@ -1,6 +1,8 @@
 Bundler.setup
 require 'searchlogic'
 require "pry"
+require "pry-stack_explorer"
+require "pry-rescue"
 require "timecop"
 
 ENV['TZ'] = 'UTC'
@@ -120,18 +122,28 @@ Spec::Runner.configure do |config|
       belongs_to :order
     end
 
+    ::Audit.delete_all
     ::Company.destroy_all
-    ::User.destroy_all
-    ::Order.destroy_all
-    ::LineItem.destroy_all
+    ::Cart.delete_all
+    ::UserGroup.delete_all
+    ::User.delete_all
+    ::Order.delete_all
+    ::Fee.delete_all
+    ::LineItem.delete_all
   end
 
   config.after(:each) do
-    class ::Object
-      remove_const :Company rescue nil
-      remove_const :User rescue nil
-      remove_const :Order rescue nil
-      remove_const :LineItem rescue nil
+    ::Object.module_eval do
+      remove_const :Audit
+      remove_const :Company
+      remove_const :Cart
+      remove_const :UserGroup
+      remove_const :User
+      remove_const :Order
+      remove_const :Fee
+      remove_const :LineItem
+
+      ActiveSupport::Dependencies::Reference.clear!
     end
   end
 end

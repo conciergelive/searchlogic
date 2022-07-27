@@ -22,6 +22,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'sqlite3', '~> 1.4.2'
   s.add_development_dependency 'appraisal', '0.4.1'
   s.add_development_dependency 'pry', '>= 0'
+  s.add_development_dependency 'pry-stack_explorer', '~> 0.6.0'
+  s.add_development_dependency 'pry-rescue', '>= 0'
 
 
   s.files         = `git ls-files`.split("\n")

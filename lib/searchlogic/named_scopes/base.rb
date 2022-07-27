@@ -2,15 +2,21 @@ module Searchlogic
   module NamedScopes
     module Base
       def condition?(name)
-        existing_condition?(name)
+        return false if name.blank?
+
+        valid_scope_names.include?(name.to_sym)
+      end
+
+      def scope(name, *)
+        super.tap { valid_scope_names.add(name.to_sym) }
       end
 
       private
-        def existing_condition?(name)
-          return false if name.blank?
-          @valid_scope_names ||= scopes.keys.reject { |k| k == :scoped }
-          @valid_scope_names.include?(name.to_sym)
-        end
+
+      # TODO: This should be a class attribute
+      def valid_scope_names
+        @valid_scope_names ||= Set.new
+      end
     end
   end
 end

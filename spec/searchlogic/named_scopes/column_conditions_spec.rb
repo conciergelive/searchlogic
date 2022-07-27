@@ -332,6 +332,7 @@ describe Searchlogic::NamedScopes::ColumnConditions do
   end
   
   it "should produce left outer joins" do
-    User.left_outer_joins(:orders).should == [" LEFT OUTER JOIN \"orders\" ON orders.user_id = users.id "]
+    User.left_outer_joins(:orders).should ==
+      ["LEFT OUTER JOIN \"orders\" ON \"orders\".\"user_id\" = \"users\".\"id\""]
   end
 end
