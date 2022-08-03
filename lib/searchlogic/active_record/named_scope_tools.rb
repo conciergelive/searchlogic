@@ -2,6 +2,14 @@ module Searchlogic
   module ActiveRecord
     # Adds methods that give extra information about a classes named scopes.
     module NamedScopeTools
+      def self.extended(base)
+        base.class_eval do
+          class_attribute :_scopes,
+            instance_reader: false,
+            instance_writer: false
+        end
+      end
+
       # Retrieves the options passed when creating the respective named scope. Ex:
       #
       #   scope :whatever, :conditions => {:column => value}
@@ -14,6 +22,7 @@ module Searchlogic
       # method.
       def named_scope_options(name)
         return unless name # TODO: Why do we need this now?
+        respond_to?(name) # TODO: Why do we nedd this now too?!
 
         key = scopes.key?(name.to_sym) ? name.to_sym : condition_scope_name(name)
 
@@ -26,13 +35,17 @@ module Searchlogic
 
       # TODO: Remove this whole mess after figuring out why we need to do this
       def scope(name, options = {}, &block)
-        scopes[name.to_sym] = options
+        self.scopes = self.scopes.merge(name.to_sym => options).freeze
+
         super
       end
 
-      # TODO: This should probably go too
       def scopes
-        @scopes ||= {}
+        self._scopes ||= {}
+      end
+
+      def scopes=(new_scopes)
+        self._scopes = new_scopes
       end
 
       # The arity for a named scope's proc is important, because we use the arity

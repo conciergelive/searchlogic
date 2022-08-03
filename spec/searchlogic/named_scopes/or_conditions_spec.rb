@@ -81,11 +81,11 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should work with User.search(conditions) method" do
     User.search(:username_or_name_like => 'ben').where_sql.should ==
-      "WHERE (users.username LIKE '%ben%') OR (users.name LIKE '%ben%')"
+      "WHERE (((users.username LIKE '%ben%')) OR ((users.name LIKE '%ben%')))"
   end
 
   it "should convert types properly when used with User.search(conditions) method" do
     User.search(:id_or_age_lte => '10').where_sql.should ==
-      "WHERE (users.id <= 10) OR (users.age <= 10)"
+      "WHERE (((users.id <= 10)) OR ((users.age <= 10)))"
   end
 end

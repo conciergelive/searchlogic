@@ -27,8 +27,6 @@ module Searchlogic
         def ordering_condition_details(name)
           if name.to_s =~ /^(ascend|descend)_by_(#{column_names.join("|")})$/
             {:order_as => $1, :column => $2}
-          elsif name.to_s =~ /^order$/
-            {}
           end
         rescue ::ActiveRecord::StatementInvalid
         end

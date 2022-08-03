@@ -89,12 +89,6 @@ describe Searchlogic::NamedScopes::AssociationConditions do
       Company.joins(users: :orders).merge(Order.total_gt(10)).to_sql
   end
 
-  # TODO: Why did this start failing?
-  # it "should copy over the named scope options" do
-  #   Order.user_whatever_at_equals(1)
-  #   Order.named_scope_options(:user_whatever_at_equals).searchlogic_options[:skip_conversion].should == true
-  # end
-
   it "should include optional associations" do
     pending # this is a problem with using inner joins and left outer joins
     Company.create
@@ -203,7 +197,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should deep delegate to polymorphic relationships" do
-    pending # TODO: Why is this not working?
+    pending # TODO: Why does this not work?!
     Audit.auditable_user_type_company_name_like("company").proxy_options.should == {
       :conditions => ["companies.name LIKE ?", "%company%"],
       :joins => ["INNER JOIN \"users\" ON \"users\".id = \"audits\".auditable_id AND \"audits\".auditable_type = 'User'", " INNER JOIN \"companies\" ON \"companies\".id = \"users\".company_id "]

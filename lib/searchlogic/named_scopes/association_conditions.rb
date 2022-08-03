@@ -73,7 +73,11 @@ module Searchlogic
             joins(join_condition).merge(target_scope)
           end
 
-          impl.searchlogic_options = target.named_scope_options(scope_name)
+          target_impl = target.named_scope_options(scope_name)
+
+          if target_impl.respond_to?(:searchlogic_options)
+            impl.searchlogic_options = target_impl.searchlogic_options
+          end
           
           # TODO: Figure out why this matters and find a better way
           impl.define_singleton_method(:arity) do 

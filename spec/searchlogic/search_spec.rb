@@ -15,7 +15,7 @@ describe Searchlogic::Search do
         company = Company.create
         user = company.users.create
         search = company.users.search
-        search.current_scope.should == company.users.scope(:find)
+        search.current_scope.to_sql.should == company.users.to_sql
       end
     end
   end
@@ -162,7 +162,7 @@ describe Searchlogic::Search do
       search = User.search
       search.four_year_olds = true
       search.four_year_olds.should == true
-      search.proxy_options.should == User.four_year_olds.proxy_options
+      search.to_sql.should == User.four_year_olds.to_sql
     end
 
     it "should not merge conflicting conditions into one value" do
@@ -363,18 +363,18 @@ describe Searchlogic::Search do
     end
 
     it "should return the column name for ascending" do
-      search = User.search(:order => "ascend_by_first_name")
-      search.ordering_by.should == "first_name"
+      search = User.search(:order => "ascend_by_name")
+      search.ordering_by.should == "name"
     end
 
     it "should return the column name for descending" do
-      search = User.search(:order => "descend_by_first_name")
-      search.ordering_by.should == "first_name"
+      search = User.search(:order => "descend_by_name")
+      search.ordering_by.should == "name"
     end
 
     it "should handle symbols" do
-      search = User.search(:order => :descend_by_first_name)
-      search.ordering_by.should == "first_name"
+      search = User.search(:order => :descend_by_name)
+      search.ordering_by.should == "name"
     end
   end
 
@@ -385,12 +385,12 @@ describe Searchlogic::Search do
     end
 
     it "should return the column name for ascending" do
-      search = User.search(:order => "ascend_by_ticket_request_event_occurs_at")
+      search = User.search(:order => "ascend_by_name")
       search.ordering_direction.should == "ascend"
     end
 
     it "should return the column name for descending" do
-      search = User.search(:order => "descend_by_ticket_request_event_occurs_at")
+      search = User.search(:order => "descend_by_name")
       search.ordering_direction.should == "descend"
     end
   end
@@ -398,27 +398,27 @@ describe Searchlogic::Search do
   context "#method_missing" do
     context "setting" do
       it "should call named scopes for conditions" do
-        User.search(:age_less_than => 5).proxy_options.should == User.age_less_than(5).proxy_options
+        User.search(:age_less_than => 5).to_sql.should == User.age_less_than(5).to_sql
       end
 
       it "should alias exact column names to use equals" do
-        User.search(:username => "joe").proxy_options.should == User.username_equals("joe").proxy_options
+        User.search(:username => "joe").to_sql.should == User.username_equals("joe").to_sql
       end
 
       it "should recognize conditions with a value of true where the named scope has an arity of 0" do
-        User.search(:username_nil => true).proxy_options.should == User.username_nil.proxy_options
+        User.search(:username_nil => true).to_sql.should == User.username_nil.to_sql
       end
 
       it "should ignore conditions with a value of false where the named scope has an arity of 0" do
-        User.search(:username_nil => false).proxy_options.should == {}
+        User.search(:username_nil => false).to_sql.should == User.scoped.to_sql
       end
 
       it "should not ignore conditions with a value of false where the named scope does not have an arity of 0" do
-        User.search(:username_is => false).proxy_options.should == User.username_is(false).proxy_options
+        User.search(:username_is => false).to_sql.should == User.username_is(false).to_sql
       end
 
       it "should recognize the order condition" do
-        User.search(:order => "ascend_by_username").proxy_options.should == User.ascend_by_username.proxy_options
+        User.search(:order => "ascend_by_username").to_sql.should == User.ascend_by_username.to_sql
       end
 
       it "should pass array values as multiple arguments with arity -1" do
@@ -426,7 +426,7 @@ describe Searchlogic::Search do
           raise "This should not be an array, it should be 1" if args.first.is_a?(Array)
           {:conditions => ["id IN (?)", args]}
         })
-        User.search(:multiple_args => [1,2]).proxy_options.should == User.multiple_args(1,2).proxy_options
+        User.search(:multiple_args => [1,2]).to_sql.should == User.multiple_args(1,2).to_sql
       end
 
       it "should pass array as a single value with arity >= 0" do
@@ -434,7 +434,7 @@ describe Searchlogic::Search do
           raise "This should be an array" if !args.is_a?(Array)
           {:conditions => ["id IN (?)", args]}
         })
-        User.search(:multiple_args => [1,2]).proxy_options.should == User.multiple_args([1,2]).proxy_options
+        User.search(:multiple_args => [1,2]).to_sql.should == User.multiple_args([1,2]).to_sql
       end
 
       it "should not split out dates or times (big fix)" do
@@ -446,7 +446,7 @@ describe Searchlogic::Search do
       it "should not include blank values" do
         s = User.search
         s.conditions = {"id_equals" => ""}
-        s.proxy_options.should == {}
+        s.to_sql.should == User.scoped.to_sql
       end
     end
   end

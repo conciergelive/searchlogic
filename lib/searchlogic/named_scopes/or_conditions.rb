@@ -31,7 +31,7 @@ module Searchlogic
 
         def or_conditions(name)
           # TODO: Why do we need this now?
-          return if name.start_with?('find_')
+          return if name.to_s.start_with?('find_')
           # First determine if we should even work on the name, we want to be as quick as possible
           # with this.
           if (parts = split_or_condition(name)).size > 1
@@ -121,8 +121,10 @@ module Searchlogic
 
         def create_or_condition(scopes)
           scope_name = scopes.join("_or_")
-
-          scope scope_name, ->(*args) {
+          scope = named_scope_options(scopes.first)
+          column_type = scope.respond_to?(:searchlogic_options) ? scope.searchlogic_options[:type] : :string
+          
+          scope scope_name, searchlogic_lambda(column_type) { |*args|
             relations = scopes.map { |scope| unscoped.public_send(scope, *args) }
 
             if (uniq_joins = extract_uniq_joins_values(relations))

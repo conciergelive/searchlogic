@@ -7,7 +7,7 @@ module Searchlogic
       # as well, so if you have a conflict like this, you can use
       # this method directly.
       def searchlogic(conditions = {})
-        Search.new(self, scope(:find), conditions)
+        Search.new(self, scoped, conditions)
       end
     end
   end

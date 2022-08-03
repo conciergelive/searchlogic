@@ -37,11 +37,11 @@ module Searchlogic
               self
             end
           else
-            scope = conditions_array.inject(klass.scoped(current_scope) || {}) do |scope, condition|
+            scope = conditions_array.inject(current_scope) do |scope, condition|
               scope_name, value = condition
               scope_name = normalize_scope_name(scope_name)
               klass.send(scope_name, value) if !klass.respond_to?(scope_name)
-              arity = klass.scope_arity(scope_name)
+              arity = klass.named_scope_arity(scope_name)
 
               if !arity || arity == 0
                 if value == true
@@ -55,6 +55,15 @@ module Searchlogic
                 scope.send(scope_name, value)
               end
             end
+
+            if order
+              if scope?(order)
+                scope = scope.except(:order).send(order)
+              else
+                scope = scope.send(:"ascend_by_#{order}")
+              end
+            end
+
             scope.send(name, *args, &block)
           end
         end
