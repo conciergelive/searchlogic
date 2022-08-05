@@ -304,17 +304,17 @@ describe Searchlogic::NamedScopes::ColumnConditions do
   context "searchlogic lambda" do
     it "should be a string" do
       User.username_like("test")
-      User.named_scope_options(:username_like).searchlogic_options[:type].should == :string
+      User.searchlogic_scope_impl(:username_like).searchlogic_options[:type].should == :string
     end
     
     it "should be an integer" do
       User.id_gt(10)
-      User.named_scope_options(:id_gt).searchlogic_options[:type].should == :integer
+      User.searchlogic_scope_impl(:id_gt).searchlogic_options[:type].should == :integer
     end
     
     it "should be a float" do
       Order.total_gt(10)
-      Order.named_scope_options(:total_gt).searchlogic_options[:type].should == :float
+      Order.searchlogic_scope_impl(:total_gt).searchlogic_options[:type].should == :float
     end
   end
   

@@ -3,7 +3,7 @@ require 'active_record'
 require "searchlogic/version"
 require "searchlogic/core_ext/proc"
 require "searchlogic/core_ext/object"
-require "searchlogic/active_record/named_scope_tools"
+require "searchlogic/active_record/join_sql_tools"
 require "searchlogic/named_scopes/base"
 require "searchlogic/named_scopes/column_conditions"
 require "searchlogic/named_scopes/ordering"
@@ -25,7 +25,7 @@ require "searchlogic/search"
 Proc.send(:include, Searchlogic::CoreExt::Proc)
 Object.send(:include, Searchlogic::CoreExt::Object)
 
-ActiveRecord::Base.extend(Searchlogic::ActiveRecord::NamedScopeTools)
+ActiveRecord::Base.extend(Searchlogic::ActiveRecord::JoinSqlTools)
 ActiveRecord::Base.extend(Searchlogic::NamedScopes::Base)
 ActiveRecord::Base.extend(Searchlogic::NamedScopes::ColumnConditions)
 ActiveRecord::Base.extend(Searchlogic::NamedScopes::AssociationConditions)

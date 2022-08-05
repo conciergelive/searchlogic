@@ -41,7 +41,7 @@ module Searchlogic
               scope_name, value = condition
               scope_name = normalize_scope_name(scope_name)
               klass.send(scope_name, value) if !klass.respond_to?(scope_name)
-              arity = klass.named_scope_arity(scope_name)
+              arity = klass.searchlogic_scope_arity(scope_name)
 
               if !arity || arity == 0
                 if value == true
@@ -70,7 +70,7 @@ module Searchlogic
 
         def normalize_scope_name(scope_name)
           case
-          when klass.scopes.key?(scope_name.to_sym) then scope_name.to_sym
+          when klass.searchlogic_scopes.key?(scope_name.to_sym) then scope_name.to_sym
           when klass.column_names.include?(scope_name.to_s) then "#{scope_name}_equals".to_sym
           else scope_name.to_sym
           end
@@ -86,12 +86,11 @@ module Searchlogic
         end
 
         def cast_type(name)
-          named_scope_options = scope_options(name)
-          arity = klass.named_scope_arity(name)
+          arity = klass.searchlogic_scope_arity(name)
           if !arity || arity == 0
             :boolean
           else
-            named_scope_options.respond_to?(:searchlogic_options) ? named_scope_options.searchlogic_options[:type] : :string
+            klass.searchlogic_scope_type(name)
           end
         end
 

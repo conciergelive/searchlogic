@@ -67,23 +67,15 @@ module Searchlogic
               association.name
             end
 
-          impl = ->(*args) do
+          type = target.searchlogic_scope_type(scope_name)
+          arity = target.searchlogic_scope_arity(scope_name)
+
+          impl = searchlogic_lambda(type, arity: arity) do |*args|
             target_scope = target.public_send(scope_name, *args)
 
             joins(join_condition).merge(target_scope)
           end
-
-          target_impl = target.named_scope_options(scope_name)
-
-          if target_impl.respond_to?(:searchlogic_options)
-            impl.searchlogic_options = target_impl.searchlogic_options
-          end
           
-          # TODO: Figure out why this matters and find a better way
-          impl.define_singleton_method(:arity) do 
-            target.named_scope_arity(scope_name)
-          end
-
           impl
         end
     end

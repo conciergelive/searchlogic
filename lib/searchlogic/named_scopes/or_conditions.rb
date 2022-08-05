@@ -10,7 +10,7 @@ module Searchlogic
         super || or_condition?(name)
       end
 
-      def named_scope_options(name) # :nodoc:
+      def searchlogic_scope_impl(name) # :nodoc:
         super || super(or_conditions(name).try(:join, "_or_"))
       end
 
@@ -121,9 +121,8 @@ module Searchlogic
 
         def create_or_condition(scopes)
           scope_name = scopes.join("_or_")
-          scope = named_scope_options(scopes.first)
-          column_type = scope.respond_to?(:searchlogic_options) ? scope.searchlogic_options[:type] : :string
-          
+          column_type = searchlogic_scope_type(scopes.first)
+
           scope scope_name, searchlogic_lambda(column_type) { |*args|
             relations = scopes.map { |scope| unscoped.public_send(scope, *args) }
 
