@@ -24,6 +24,13 @@ module Searchlogic
         super
       end
 
+      # This is required to avoid an infinate loop when defining scopes
+      def valid_scope_name?(name)
+        return true if searchlogic_scopes.key?(name)
+
+        super
+      end
+
       def searchlogic_scope_impl(scope_name)
         return if !scope_name || !respond_to?(scope_name)
 

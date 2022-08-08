@@ -14,6 +14,16 @@ module Searchlogic
         super || super(or_conditions(name).try(:join, "_or_"))
       end
 
+      # Annoyingly, this needs to become part of the public API since it
+      # is used within the outer application.
+      def merge_scopes_with_or(relations)
+        if (uniq_joins = extract_uniq_joins_values(relations))
+          joins(uniq_joins).where(combine_where_sql(relations))
+        else
+          where(combine_subquery_sql(relations))
+        end
+      end
+
       private
         def or_condition?(name)
           !or_conditions(name).nil?
@@ -124,13 +134,9 @@ module Searchlogic
           column_type = searchlogic_scope_type(scopes.first)
 
           scope scope_name, searchlogic_lambda(column_type) { |*args|
-            relations = scopes.map { |scope| unscoped.public_send(scope, *args) }
-
-            if (uniq_joins = extract_uniq_joins_values(relations))
-              joins(uniq_joins).where(combine_where_sql(relations))
-            else
-              where(combine_subquery_sql(relations))
-            end
+            merge_scopes_with_or(
+              scopes.map { |scope| unscoped.public_send(scope, *args) }
+            )
           }
         end
 
