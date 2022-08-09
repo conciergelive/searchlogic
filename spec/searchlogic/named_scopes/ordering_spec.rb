@@ -3,12 +3,12 @@ require 'spec_helper'
 describe Searchlogic::NamedScopes::Ordering do
   it "should have ascending" do
     %w(bjohnson thunt).each { |username| User.create(:username => username) }
-    User.ascend_by_username.all.should == User.all(:order => "username ASC")
+    User.ascend_by_username.to_a.should == User.order("username ASC").to_a
   end
 
   it "should have descending" do
     %w(bjohnson thunt).each { |username| User.create(:username => username) }
-    User.descend_by_username.all.should == User.all(:order => "username DESC")
+    User.descend_by_username.to_a.should == User.order("username DESC").to_a
   end
 
   it "should have order" do

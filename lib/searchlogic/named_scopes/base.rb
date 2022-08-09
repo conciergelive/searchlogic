@@ -52,6 +52,16 @@ module Searchlogic
         impl.searchlogic_options.fetch(:arity) { impl.arity }
       end
 
+      if ::ActiveRecord::VERSION::MAJOR == 3
+        def searchlogic_compat_all
+          scoped
+        end
+      else
+        def searchlogic_compat_all
+          all
+        end
+      end
+
       def condition?(name)
         return false if name.blank?
 

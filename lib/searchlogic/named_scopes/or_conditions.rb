@@ -158,7 +158,7 @@ module Searchlogic
         end
 
         def relation_subquery_sql(relation)
-          "#{table_name}.id IN (#{relation.select(:id).to_sql})"
+          "#{table_name}.id IN (#{relation.select("#{table_name}.id").to_sql})"
         end
     end
   end

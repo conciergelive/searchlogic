@@ -9,7 +9,10 @@ ENV['TZ'] = 'UTC'
 Time.zone = 'Eastern Time (US & Canada)'
 
 ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
-ActiveRecord::Base.configurations = true
+
+if ActiveRecord::VERSION::MAJOR == 3
+  ActiveRecord::Base.configurations = true
+end
 
 ActiveRecord::Schema.verbose = false
 ActiveRecord::Schema.define(:version => 1) do

@@ -8,7 +8,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
 
   it "should create a deep named scope" do
     Company.users_orders_total_greater_than(10).to_sql.should ==
-      Company.joins(users: :orders).merge(Order.total_greater_than(10)).to_sql
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(10))).to_sql
   end
 
   it "should allow the use of foreign pre-existing named scopes" do
@@ -58,10 +58,10 @@ describe Searchlogic::NamedScopes::AssociationConditions do
 
   it "should allow deep named scopes to be called multiple times and reflect the value passed" do
     Company.users_orders_total_greater_than(10).to_sql.should ==
-      Company.joins(users: :orders).merge(Order.total_greater_than(10)).to_sql
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(10))).to_sql
 
     Company.users_orders_total_greater_than(20).to_sql.should ==
-      Company.joins(users: :orders).merge(Order.total_greater_than(20)).to_sql
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(20))).to_sql
   end
 
   it "should have an arity of 1 if the underlying scope has an arity of 1" do
@@ -86,7 +86,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
 
   it "should allow deep aliases" do
     Company.users_orders_total_gt(10).to_sql.should ==
-      Company.joins(users: :orders).merge(Order.total_gt(10)).to_sql
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_gt(10))).to_sql
   end
 
   it "should include optional associations" do
@@ -139,28 +139,28 @@ describe Searchlogic::NamedScopes::AssociationConditions do
     company = Company.create
     user = company.users.create
     order = user.orders.create(:total => 20, :taxes => 3)
-    Company.users_orders_total_gt(10).users_orders_taxes_lt(5).ascend_by_users_orders_total.all(:include => :users).should == Company.all
+    Company.users_orders_total_gt(10).users_orders_taxes_lt(5).ascend_by_users_orders_total.includes(:users).to_a.should == Company.all.to_a
   end
 
   it "should allow the use of deep :include when a join was created" do
     company = Company.create
     user = company.users.create
     order = user.orders.create(:total => 20, :taxes => 3)
-    Company.users_orders_total_gt(10).users_orders_taxes_lt(5).ascend_by_users_orders_total.all(:include => {:users => :orders}).should == Company.all
+    Company.users_orders_total_gt(10).users_orders_taxes_lt(5).ascend_by_users_orders_total.includes(:users => :orders).to_a.should == Company.all.to_a
   end
 
   it "should allow the use of :include when traveling through the duplicate join" do
     company = Company.create
     user = company.users.create(:username => "bjohnson")
     order = user.orders.create(:total => 20, :taxes => 3)
-    Company.users_username_like("bjohnson").users_orders_taxes_lt(5).ascend_by_users_orders_total.all(:include => :users).should == Company.all
+    Company.users_username_like("bjohnson").users_orders_taxes_lt(5).ascend_by_users_orders_total.includes(:users).to_a.should == Company.all.to_a
   end
 
   it "should allow the use of deep :include when traveling through the duplicate join" do
     company = Company.create
     user = company.users.create(:username => "bjohnson")
     order = user.orders.create(:total => 20, :taxes => 3)
-    Company.users_orders_taxes_lt(50).ascend_by_users_orders_total.all(:include => {:users => :orders}).should == Company.all
+    Company.users_orders_taxes_lt(50).ascend_by_users_orders_total.includes(:users => :orders).to_a.should == Company.all.to_a
   end
 
   it "should automatically add string joins if the association condition is using strings" do

@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   s.summary     = %q{Searchlogic makes using ActiveRecord named scopes easier and less repetitive.}
   s.description = %q{Searchlogic makes using ActiveRecord named scopes easier and less repetitive.}
 
-  s.add_dependency 'activerecord', '~> 3.2', '< 4.0'
-  s.add_dependency 'activesupport', '~> 3.2', '< 4.0'
+  s.add_dependency 'activerecord', '>= 3.2', '< 5.0'
+  s.add_dependency 'activesupport', '>= 3.2', '< 5.0'
 
   s.add_development_dependency 'rake', '< 11.0'
   s.add_development_dependency 'rspec', '~> 1.3.1'
@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'pry', '>= 0'
   s.add_development_dependency 'pry-stack_explorer', '~> 0.6.0'
   s.add_development_dependency 'pry-rescue', '>= 0'
+  s.add_development_dependency 'appraisal'
 
 
   s.files         = `git ls-files`.split("\n")

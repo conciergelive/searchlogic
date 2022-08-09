@@ -1,5 +1,5 @@
 PATH
-  remote: .
+  remote: ..
   specs:
     searchlogic (2.5.19)
       activerecord (>= 3.2, < 5.0)

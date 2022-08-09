@@ -103,9 +103,22 @@ module Searchlogic
           else
             # Let's leverage ActiveRecord's type casting, so that casting is consistent
             # with the other models.
-            column_for_type_cast = ::ActiveRecord::ConnectionAdapters::Column.new("", nil)
-            column_for_type_cast.instance_variable_set(:@type, type)
-            casted_value = column_for_type_cast.type_cast(value)
+            casted_value = 
+              case type
+              when :string
+                value.to_s
+              when :integer
+                value.to_i
+              else
+                if ::ActiveRecord::VERSION::MAJOR == 3
+                  column_for_type_cast = ::ActiveRecord::ConnectionAdapters::Column.new("", nil, type)
+                  column_for_type_cast.type_cast(value)
+                else
+                  sql_type = ::ActiveRecord::Base.connection.native_database_types.dig(type, :name)
+                  caster = ::ActiveRecord::Base.connection.type_map.lookup(sql_type)
+                  caster.type_cast_from_user(value)
+                end
+              end
 
             if Time.zone && casted_value.is_a?(Time)
               if value.is_a?(String)

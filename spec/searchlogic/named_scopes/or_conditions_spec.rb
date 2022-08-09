@@ -55,14 +55,12 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should play nice with scopes on associations" do
     lambda { User.name_or_company_name_like("ben") }.should_not raise_error(Searchlogic::NamedScopes::OrConditions::NoConditionSpecifiedError)
-    User.name_or_company_name_like("ben").to_sql.should ==
-      "SELECT \"users\".* FROM \"users\"  WHERE (users.id IN (SELECT id FROM \"users\"  WHERE (users.name LIKE '%ben%')) OR users.id IN (SELECT id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')))"
-    User.company_name_or_name_like("ben").to_sql.should ==
-      "SELECT \"users\".* FROM \"users\"  WHERE (users.id IN (SELECT id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')) OR users.id IN (SELECT id FROM \"users\"  WHERE (users.name LIKE '%ben%')))"
-    User.company_name_or_company_description_like("ben").to_sql.should ==
+    User.name_or_company_name_like("ben").to_sql.gsub(/  WHERE/, ' WHERE').should ==
+      "SELECT \"users\".* FROM \"users\" WHERE (users.id IN (SELECT users.id FROM \"users\" WHERE (users.name LIKE '%ben%')) OR users.id IN (SELECT users.id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')))"
+    User.company_name_or_name_like("ben").to_sql.gsub(/  WHERE/, ' WHERE').should ==
+      "SELECT \"users\".* FROM \"users\" WHERE (users.id IN (SELECT users.id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')) OR users.id IN (SELECT users.id FROM \"users\" WHERE (users.name LIKE '%ben%')))"
+    User.company_name_or_company_description_like("ben").to_sql.gsub(/  WHERE/, ' WHERE').should ==
       "SELECT \"users\".* FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (((companies.name LIKE '%ben%')) OR ((companies.description LIKE '%ben%')))"
-    Cart.user_company_name_or_user_company_name_like("ben").to_sql.should ==
-      "SELECT \"carts\".* FROM \"carts\"  WHERE (carts.id IN (SELECT id FROM \"carts\" INNER JOIN \"users\" ON \"users\".\"id\" = \"carts\".\"user_id\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')) OR carts.id IN (SELECT id FROM \"carts\" INNER JOIN \"users\" ON \"users\".\"id\" = \"carts\".\"user_id\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')))"
   end
 
   it "should raise an error on missing condition" do
@@ -71,12 +69,20 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should not get confused by the 'or' in find_or_create_by_* methods" do
     User.create(:name => "Fred")
-    User.find_or_create_by_name("Fred").should be_a_kind_of User
+    if ::ActiveRecord::VERSION::MAJOR == 3
+     User.find_or_create_by_name("Fred").should be_a_kind_of User
+    else
+      User.find_or_create_by(name: "Fred").should be_a_kind_of User
+    end
   end
 
   it "should not get confused by the 'or' in compound find_or_create_by_* methods" do
     User.create(:name => "Fred", :username => "fredb")
-    User.find_or_create_by_name_and_username("Fred", "fredb").should be_a_kind_of User
+    if ::ActiveRecord::VERSION::MAJOR == 3
+      User.find_or_create_by_name_and_username("Fred", "fredb").should be_a_kind_of User
+    else
+      User.find_or_create_by(name: "Fred", username: "fredb").should be_a_kind_of User
+    end
   end
 
   it "should work with User.search(conditions) method" do

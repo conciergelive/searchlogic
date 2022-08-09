@@ -63,6 +63,19 @@ module Searchlogic
         super || (self != ::ActiveRecord::Base && !self.abstract_class? && !create_condition(args.first).blank?)
       end
 
+      def value_with_modifier(value, modifier)
+        case modifier
+        when :like
+          "%#{value}%"
+        when :begins_with
+          "#{value}%"
+        when :ends_with
+          "%#{value}"
+        else
+          value
+        end
+      end
+
       private
         def column_condition?(name)
           return false if name.blank?
@@ -106,7 +119,7 @@ module Searchlogic
           elsif boolean_condition?(name)
             column = name.to_s.gsub(/^not_/, "")
             value = (name.to_s =~ /^not_/).nil?
-            scope name, ->(*) { where(column => value) }
+            scope name, ->(*) { where("#{table_name}.#{column}" => value) }
           end
         end
 
@@ -190,7 +203,7 @@ module Searchlogic
                   where(scope_sql, *values)
                 end
               else
-                scoped
+                searchlogic_compat_all
               end
             }
           else
@@ -207,19 +220,6 @@ module Searchlogic
 
               where(new_sql, *values)
             }
-          end
-        end
-
-        def value_with_modifier(value, modifier)
-          case modifier
-          when :like
-            "%#{value}%"
-          when :begins_with
-            "#{value}%"
-          when :ends_with
-            "%#{value}"
-          else
-            value
           end
         end
 
