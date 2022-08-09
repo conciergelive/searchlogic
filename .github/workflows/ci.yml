@@ -14,4 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ruby/setup-ruby@v1
+      - run: bundle config gems.railslts.com "${{ secrets.RAILS_LTS_SECRET }}"
+      - run: bundle install
       - run: bin/rake

@@ -2,19 +2,19 @@ PATH
   remote: .
   specs:
     searchlogic (2.5.19)
-      activerecord (>= 3.2.22.24, < 4.0)
-      activesupport (>= 3.2.22.24, < 4.0)
+      activerecord (~> 3.2, < 4.0)
+      activesupport (~> 3.2, < 4.0)
 
 GEM
   remote: https://rubygems.org/
-  remote: https://unabridged_software_380:1S26GanqkWqo3qCe@gems.railslts.com/
+  remote: https://gems.railslts.com/
   specs:
-    actionmailer (3.2.22.24)
-      actionpack (= 3.2.22.24)
+    actionmailer (3.2.22.31)
+      actionpack (= 3.2.22.31)
       mail (~> 2.5.4)
-    actionpack (3.2.22.24)
-      activemodel (= 3.2.22.24)
-      activesupport (= 3.2.22.24)
+    actionpack (3.2.22.31)
+      activemodel (= 3.2.22.31)
+      activesupport (= 3.2.22.31)
       builder (~> 3.0)
       erubis (~> 2.7.0)
       journey (~> 1.0.4)
@@ -22,18 +22,18 @@ GEM
       rack-cache (~> 1.2)
       rack-test (~> 0.6.1)
       sprockets (= 2.2.3)
-    activemodel (3.2.22.24)
-      activesupport (= 3.2.22.24)
+    activemodel (3.2.22.31)
+      activesupport (= 3.2.22.31)
       builder (~> 3.0)
-    activerecord (3.2.22.24)
-      activemodel (= 3.2.22.24)
-      activesupport (= 3.2.22.24)
+    activerecord (3.2.22.31)
+      activemodel (= 3.2.22.31)
+      activesupport (= 3.2.22.31)
       arel (~> 3.0.2)
-      tzinfo (~> 0.3.29)
-    activeresource (3.2.22.24)
-      activemodel (= 3.2.22.24)
-      activesupport (= 3.2.22.24)
-    activesupport (3.2.22.24)
+      tzinfo (~> 0.3.61)
+    activeresource (3.2.22.31)
+      activemodel (= 3.2.22.31)
+      activesupport (= 3.2.22.31)
+    activesupport (3.2.22.31)
       i18n (~> 0.6, >= 0.6.4)
       multi_json (~> 1.0)
     arel (3.0.3)
@@ -73,20 +73,20 @@ GEM
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
-    rails (3.2.22.24)
-      actionmailer (= 3.2.22.24)
-      actionpack (= 3.2.22.24)
-      activemodel (= 3.2.22.24)
-      activerecord (= 3.2.22.24)
-      activeresource (= 3.2.22.24)
-      activesupport (= 3.2.22.24)
-      bundler (~> 1.0)
-      railslts-version (= 3.2.22.24)
-      railties (= 3.2.22.24)
-    railslts-version (3.2.22.24)
-    railties (3.2.22.24)
-      actionpack (= 3.2.22.24)
-      activesupport (= 3.2.22.24)
+    rails (3.2.22.31)
+      actionmailer (= 3.2.22.31)
+      actionpack (= 3.2.22.31)
+      activemodel (= 3.2.22.31)
+      activerecord (= 3.2.22.31)
+      activeresource (= 3.2.22.31)
+      activesupport (= 3.2.22.31)
+      bundler (>= 1.0)
+      railslts-version (= 3.2.22.31)
+      railties (= 3.2.22.31)
+    railslts-version (3.2.22.31)
+    railties (3.2.22.31)
+      actionpack (= 3.2.22.31)
+      activesupport (= 3.2.22.31)
       rack-ssl (~> 1.3.2)
       rake (>= 0.8.7)
       rdoc (~> 3.4)
@@ -113,12 +113,18 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  actionmailer!
+  actionpack!
+  activemodel!
   activerecord!
+  activeresource!
   activesupport!
   pry
   pry-rescue
   pry-stack_explorer (~> 0.6.0)
   rails (~> 3.2)!
+  railslts-version!
+  railties!
   rake (< 11.0)
   rspec (~> 1.3.1)
   searchlogic!
