@@ -102,7 +102,13 @@ Spec::Runner.configure do |config|
       belongs_to :company, :counter_cache => true
       has_many :carts, :dependent => :destroy
       has_many :orders, :dependent => :destroy
-      has_many :orders_big, :class_name => 'Order', :conditions => 'total > 100'
+
+      if ActiveRecord::VERSION::MAJOR == 3
+        has_many :orders_big, :class_name => 'Order', :conditions => 'total > 100'
+      else
+        has_many :orders_big, -> { where('total > 100') }, :class_name => 'Order'
+      end
+
       has_many :audits, :as => :auditable
       has_and_belongs_to_many :user_groups
 

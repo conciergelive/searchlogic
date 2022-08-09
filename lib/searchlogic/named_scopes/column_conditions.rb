@@ -105,7 +105,8 @@ module Searchlogic
 
           elsif boolean_condition?(name)
             column = name.to_s.gsub(/^not_/, "")
-            scope name, :conditions => {column => (name.to_s =~ /^not_/).nil?}
+            value = (name.to_s =~ /^not_/).nil?
+            scope name, ->(*) { where(column => value) }
           end
         end
 
@@ -141,15 +142,15 @@ module Searchlogic
           when /^not_end_with/
             scope_options(condition, column, "#{table_name}.#{column.name} NOT #{match_keyword} ?", :skip_conversion => skip_conversion, :value_modifier => :ends_with)
           when "null"
-            {:conditions => "#{table_name}.#{column.name} IS NULL"}
+            -> { where("#{table_name}.#{column.name} IS NULL") }
           when "not_null"
-            {:conditions => "#{table_name}.#{column.name} IS NOT NULL"}
+            -> { where("#{table_name}.#{column.name} IS NOT NULL") }
           when "empty"
-            {:conditions => "#{table_name}.#{column.name} = ''"}
+            -> { where("#{table_name}.#{column.name} = ''") }
           when "blank"
-            {:conditions => "#{table_name}.#{column.name} = '' OR #{table_name}.#{column.name} IS NULL"}
+            -> { where("#{table_name}.#{column.name} = '' OR #{table_name}.#{column.name} IS NULL") }
           when "not_blank"
-            {:conditions => "#{table_name}.#{column.name} != '' AND #{table_name}.#{column.name} IS NOT NULL"}
+            -> { where("#{table_name}.#{column.name} != '' AND #{table_name}.#{column.name} IS NOT NULL") }
           end
 
           scope("#{column.name}_#{condition}".to_sym, scope_options)
@@ -179,17 +180,17 @@ module Searchlogic
                     subs << nil
                   end
 
-                  {:conditions => [sql, *subs]}
+                  where(sql, *subs)
                 else
                   values.flatten!
                   values.collect! { |value| value_with_modifier(value, options[:value_modifier]) }
 
                   scope_sql = values.collect { |value| sql }.join(join_word)
 
-                  {:conditions => [scope_sql, *values]}
+                  where(scope_sql, *values)
                 end
               else
-                {}
+                scoped
               end
             }
           else
@@ -204,7 +205,7 @@ module Searchlogic
                 sql
               end
 
-              {:conditions => [new_sql, *values]}
+              where(new_sql, *values)
             }
           end
         end

@@ -196,14 +196,6 @@ describe Searchlogic::NamedScopes::AssociationConditions do
     Audit.joins(Audit.inner_polymorphic_join(:user, as: :auditable)).merge(User.some_type_id_like("ben")).to_sql
   end
 
-  it "should deep delegate to polymorphic relationships" do
-    pending # TODO: Why does this not work?!
-    Audit.auditable_user_type_company_name_like("company").proxy_options.should == {
-      :conditions => ["companies.name LIKE ?", "%company%"],
-      :joins => ["INNER JOIN \"users\" ON \"users\".id = \"audits\".auditable_id AND \"audits\".auditable_type = 'User'", " INNER JOIN \"companies\" ON \"companies\".id = \"users\".company_id "]
-    }
-  end
-
   it "should allow any on a has_many relationship" do
     company1 = Company.create
     user1 = company1.users.create
@@ -218,7 +210,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
     user = User.create
     Order.create :user => user, :shipped_on => Time.now
     Order.create :shipped_on => Time.now
-    Order.scope :shipped_on_not_null, :conditions => ['shipped_on is not null']
+    Order.scope :shipped_on_not_null, -> { Order.where('shipped_on is not null') }
     user.orders.count.should == 1
     user.orders.shipped_on_not_null.shipped_on_greater_than(2.days.ago).count.should == 1
   end
@@ -236,7 +228,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
     Order.create :user => user, :shipped_on => Time.current
 
     # create the scope and use it through a chained association
-    Order.scope :shipped, lambda { {:conditions => ["shipped_on <= ?", Time.current]} }
+    Order.scope :shipped, lambda { Order.where("shipped_on <= ?", Time.current) }
     User.orders_shipped
 
     # simulate a day passing after the chained scope is first used

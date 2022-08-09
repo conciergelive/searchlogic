@@ -424,7 +424,7 @@ describe Searchlogic::Search do
       it "should pass array values as multiple arguments with arity -1" do
         User.scope(:multiple_args, lambda { |*args|
           raise "This should not be an array, it should be 1" if args.first.is_a?(Array)
-          {:conditions => ["id IN (?)", args]}
+          User.where("id IN (?)", args)
         })
         User.search(:multiple_args => [1,2]).to_sql.should == User.multiple_args(1,2).to_sql
       end
@@ -432,7 +432,7 @@ describe Searchlogic::Search do
       it "should pass array as a single value with arity >= 0" do
         User.scope(:multiple_args, lambda { |args|
           raise "This should be an array" if !args.is_a?(Array)
-          {:conditions => ["id IN (?)", args]}
+          User.where("id IN (?)", args)
         })
         User.search(:multiple_args => [1,2]).to_sql.should == User.multiple_args([1,2]).to_sql
       end
@@ -482,7 +482,7 @@ describe Searchlogic::Search do
     end
 
     it "should implement the current scope based on a named scope" do
-      User.scope(:four_year_olds, :conditions => {:age => 4})
+      User.scope(:four_year_olds, -> { User.where(age: 4) })
       (3..5).each { |age| User.create(:age => age) }
       User.four_year_olds.search.all.should == User.find_all_by_age(4)
     end
