@@ -414,7 +414,7 @@ describe Searchlogic::Search do
       end
 
       it "should not ignore conditions with a value of false where the named scope does not have an arity of 0" do
-        User.search(:username_is => false).to_sql.should == User.username_is('false').to_sql
+        User.search(:username_is => false).to_sql.should == User.username_is(false).to_sql
       end
 
       it "should recognize the order condition" do

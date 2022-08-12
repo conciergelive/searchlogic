@@ -101,24 +101,7 @@ module Searchlogic
           when Range
             Range.new(type_cast(value.first, type), type_cast(value.last, type))
           else
-            # Let's leverage ActiveRecord's type casting, so that casting is consistent
-            # with the other models.
-            casted_value = 
-              case type
-              when :string
-                value.to_s
-              when :integer
-                value.to_i
-              else
-                if ::ActiveRecord::VERSION::MAJOR == 3
-                  column_for_type_cast = ::ActiveRecord::ConnectionAdapters::Column.new("", nil, type)
-                  column_for_type_cast.type_cast(value)
-                else
-                  sql_type = ::ActiveRecord::Base.connection.native_database_types.dig(type, :name)
-                  caster = ::ActiveRecord::Base.connection.type_map.lookup(sql_type)
-                  caster.type_cast_from_user(value)
-                end
-              end
+            casted_value = legacy_active_record_type_cast(type, value)
 
             if Time.zone && casted_value.is_a?(Time)
               if value.is_a?(String)
@@ -132,6 +115,27 @@ module Searchlogic
             else
               casted_value
             end
+          end
+        end
+
+        ARColumn = ::ActiveRecord::ConnectionAdapters::Column
+
+        def legacy_active_record_type_cast(type, value)
+          return nil if value.nil?
+
+          case type
+            when :string    then value
+            when :text      then value
+            when :integer   then value.to_i rescue value ? 1 : 0
+            when :float     then value.to_f
+            when :decimal   then ARColumn.value_to_decimal(value)
+            when :datetime  then ARColumn.string_to_time(value)
+            when :timestamp then ARColumn.string_to_time(value)
+            when :time      then ARColumn.string_to_dummy_time(value)
+            when :date      then ARColumn.string_to_date(value)
+            when :binary    then ARColumn.binary_to_string(value)
+            when :boolean   then ARColumn.value_to_boolean(value)
+            else value
           end
         end
     end
