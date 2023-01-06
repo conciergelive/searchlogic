@@ -17,6 +17,15 @@ module Searchlogic
       # Annoyingly, this needs to become part of the public API since it
       # is used within the outer application.
       def merge_scopes_with_or(relations)
+        # Even though it does make logical sense, for backwards compat we must
+        # ignore relations with no conditions.
+        relations = relations.reject do |relation|
+          relation == unscoped ||
+            relation == searchlogic_compat_all
+        end
+
+        return searchlogic_compat_all if relations.empty?
+
         if (uniq_joins = extract_uniq_joins_values(relations))
           joins(uniq_joins).where(combine_where_sql(relations))
         else
