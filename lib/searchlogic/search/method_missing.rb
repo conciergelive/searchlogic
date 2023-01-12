@@ -58,9 +58,9 @@ module Searchlogic
 
             if order
               if scope?(order)
-                scope = scope.except(:order).send(order) if scope.respond_to?(order)
-              else
-                scope = scope.send(:"ascend_by_#{order}") if scope.respond_to?(:"ascend_by_#{order}")
+                scope = scope.except(:order).send(order)
+              elsif scope?(:"ascend_by_#{order}")
+                scope = scope.send(:"ascend_by_#{order}")
               end
             end
 
