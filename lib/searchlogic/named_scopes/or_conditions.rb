@@ -20,8 +20,8 @@ module Searchlogic
         # Even though it does make logical sense, for backwards compat we must
         # ignore relations with no conditions.
         relations = relations.reject do |relation|
-          relation == unscoped ||
-            relation == searchlogic_compat_all
+          relation.to_sql == unscoped.to_sql ||
+            relation.to_sql == searchlogic_compat_all.to_sql
         end
 
         return searchlogic_compat_all if relations.empty?
