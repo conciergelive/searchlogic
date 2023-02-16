@@ -3,6 +3,7 @@ require 'active_record'
 require "searchlogic/version"
 require "searchlogic/core_ext/proc"
 require "searchlogic/core_ext/object"
+require "searchlogic/joins_solver"
 require "searchlogic/active_record/join_sql_tools"
 require "searchlogic/named_scopes/base"
 require "searchlogic/named_scopes/column_conditions"

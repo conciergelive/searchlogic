@@ -11,7 +11,7 @@ module Searchlogic
       end
 
       def searchlogic_scope_impl(name) # :nodoc:
-        super || super(or_conditions(name).try(:join, "_or_"))
+        super || super(or_conditions(name)&.join("_or_"))
       end
 
       # Annoyingly, this needs to become part of the public API since it

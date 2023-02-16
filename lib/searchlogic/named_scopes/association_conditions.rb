@@ -73,7 +73,9 @@ module Searchlogic
           impl = searchlogic_lambda(type, arity: arity) do |*args|
             target_scope = target.public_send(scope_name, *args)
 
-            joins(join_condition).merge(target_scope)
+            scoped_with_isolated_table_references do
+              joins(join_condition).merge(target_scope)
+            end
           end
           
           impl

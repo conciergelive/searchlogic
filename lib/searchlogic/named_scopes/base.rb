@@ -62,6 +62,14 @@ module Searchlogic
         end
       end
 
+      def scoped_with_isolated_table_references(&block)
+        merge_with_isolated_table_references(unscoped(&block))
+      end
+
+      def merge_with_isolated_table_references(isolated_scope)
+        JoinsSolver.merge_relations(searchlogic_compat_all, isolated_scope)
+      end
+
       def condition?(name)
         return false if name.blank?
 
