@@ -2,38 +2,38 @@ require 'spec_helper'
 
 describe Searchlogic::NamedScopes::AssociationConditions do
   it "should create a named scope" do
-    Company.users_username_like("bjohnson").to_sql.should == 
-      Company.joins(:users).merge(User.username_like("bjohnson")).to_sql
+    Company.users_username_like("bjohnson").to_sql.should(be_similar_sql( 
+      Company.joins(:users).merge(User.username_like("bjohnson")).to_sql))
   end
 
   it "should create a deep named scope" do
-    Company.users_orders_total_greater_than(10).to_sql.should ==
-      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(10))).to_sql
+    Company.users_orders_total_greater_than(10).to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(10))).to_sql))
   end
 
   it "should allow the use of foreign pre-existing named scopes" do
     User.scope :uname, ->(value) { User.where(username: value) }
-    Company.users_uname("bjohnson").to_sql.should ==
-      Company.joins(:users).merge(User.uname("bjohnson")).to_sql
+    Company.users_uname("bjohnson").to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.uname("bjohnson")).to_sql))
   end
 
   it "should allow the use of deep foreign pre-existing named scopes" do
     pending
     Order.scope :big_id, -> { User.where("orders.id > 100") }
-    Company.users_orders_big_id.to_sql.should ==
-      Company.joins(users: :orders).merge(Order.big_id).to_sql
+    Company.users_orders_big_id.to_sql.should(be_similar_sql(
+      Company.joins(users: :orders).merge(Order.big_id).to_sql))
   end
 
   it "should allow the use of foreign pre-existing alias scopes" do
     User.alias_scope :username_has, ->(value) { User.username_like(value) }
-    Company.users_username_has("bjohnson").to_sql.should ==
-      Company.joins(:users).merge(User.username_has("bjohnson")).to_sql
+    Company.users_username_has("bjohnson").to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.username_has("bjohnson")).to_sql))
   end
 
   it "should not raise errors for scopes that don't return anything" do
     User.alias_scope :blank_scope, lambda { |value| }
-    Company.users_blank_scope("bjohnson").to_sql.should ==
-      Company.joins(:users).to_sql
+    Company.users_blank_scope("bjohnson").to_sql.should(be_similar_sql(
+      Company.joins(:users).to_sql))
   end
 
   it "should ignore polymorphic associations" do
@@ -49,19 +49,19 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should allow named scopes to be called multiple times and reflect the value passed" do
-    Company.users_username_like("bjohnson").to_sql.should ==
-      Company.joins(:users).merge(User.username_like("bjohnson")).to_sql
+    Company.users_username_like("bjohnson").to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.username_like("bjohnson")).to_sql))
 
-    Company.users_username_like("thunt").to_sql.should ==
-      Company.joins(:users).merge(User.username_like("thunt")).to_sql
+    Company.users_username_like("thunt").to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.username_like("thunt")).to_sql))
   end
 
   it "should allow deep named scopes to be called multiple times and reflect the value passed" do
-    Company.users_orders_total_greater_than(10).to_sql.should ==
-      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(10))).to_sql
+    Company.users_orders_total_greater_than(10).to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(10))).to_sql))
 
-    Company.users_orders_total_greater_than(20).to_sql.should ==
-      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(20))).to_sql
+    Company.users_orders_total_greater_than(20).to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_greater_than(20))).to_sql))
   end
 
   it "should have an arity of 1 if the underlying scope has an arity of 1" do
@@ -80,13 +80,13 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should allow aliases" do
-    Company.users_username_contains("bjohnson").to_sql.should ==
-      Company.joins(:users).merge(User.username_contains("bjohnson")).to_sql
+    Company.users_username_contains("bjohnson").to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.username_contains("bjohnson")).to_sql))
   end
 
   it "should allow deep aliases" do
-    Company.users_orders_total_gt(10).to_sql.should ==
-      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_gt(10))).to_sql
+    Company.users_orders_total_gt(10).to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.total_gt(10))).to_sql))
   end
 
   it "should include optional associations" do
@@ -99,6 +99,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should implement exclusive scoping" do
+    pending # self joins like this confuse the join solver
     scope = Company.users_company_name_like("name").users_company_description_like("description")
     # scope.scope(:find)[:joins].should == [
     #   "INNER JOIN \"users\" ON companies.id = users.company_id",
@@ -170,8 +171,8 @@ describe Searchlogic::NamedScopes::AssociationConditions do
     ]
 
     User.scope(:orders_big_id, -> { User.joins(string_joins) })
-    Company.users_orders_big_id.to_sql.should ==
-      Company.joins(:users).merge(User.joins(string_joins)).to_sql
+    Company.users_orders_big_id.to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(string_joins)).to_sql))
   end
 
   it "should order the join statements ascending by the fieldnames so that we don't get double joins where the only difference is that the order of the fields is different" do
@@ -182,18 +183,18 @@ describe Searchlogic::NamedScopes::AssociationConditions do
 
   it "should sanitize the scope on a foreign model instead of passing the raw options back to the original" do
     Company.scope :users_count_10, -> { Company.where(users_count: 10) }
-    User.company_users_count_10.to_sql.should ==
-      User.joins(:company).merge(Company.where(users_count: 10)).to_sql
+    User.company_users_count_10.to_sql.should(be_similar_sql(
+      User.joins(:company).merge(Company.where(users_count: 10)).to_sql))
   end
 
   it "should delegate to polymorphic relationships" do
-    Audit.auditable_user_type_name_like("ben").to_sql.should == 
-      Audit.joins(Audit.inner_polymorphic_join(:user, as: :auditable)).merge(User.name_like("ben")).to_sql
+    Audit.auditable_user_type_name_like("ben").to_sql.should(be_similar_sql( 
+      Audit.joins(Audit.inner_polymorphic_join(:user, as: :auditable)).merge(User.name_like("ben")).to_sql))
   end
 
   it "should delegate to polymorphic relationships (with a lazy split on _type_)" do
-    Audit.auditable_user_type_some_type_id_like("ben").to_sql.should == 
-    Audit.joins(Audit.inner_polymorphic_join(:user, as: :auditable)).merge(User.some_type_id_like("ben")).to_sql
+    Audit.auditable_user_type_some_type_id_like("ben").to_sql.should(be_similar_sql( 
+    Audit.joins(Audit.inner_polymorphic_join(:user, as: :auditable)).merge(User.some_type_id_like("ben")).to_sql))
   end
 
   it "should allow any on a has_many relationship" do

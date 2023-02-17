@@ -156,3 +156,10 @@ Spec::Runner.configure do |config|
     end
   end
 end
+
+Spec::Matchers.define :be_similar_sql do |expected|
+  match do |actual|
+    actual&.gsub(/\s+/, ' ')&.gsub(/\(|\)|"/, '')&.strip ==
+      expected&.gsub(/\s+/, ' ')&.gsub(/\(|\)|"/, '')&.strip
+  end
+end

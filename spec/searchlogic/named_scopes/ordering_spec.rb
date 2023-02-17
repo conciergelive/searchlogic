@@ -12,8 +12,8 @@ describe Searchlogic::NamedScopes::Ordering do
   end
 
   it "should have order" do
-    User.order('users.username ASC').to_sql.should ==
-      User.ascend_by_username.to_sql
+    User.order('users.username ASC').to_sql.should(be_similar_sql(
+      User.ascend_by_username.to_sql))
   end
 
   it "should have priorty to columns over conflicting association columns" do

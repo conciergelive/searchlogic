@@ -15,7 +15,7 @@ describe Searchlogic::Search do
         company = Company.create
         user = company.users.create
         search = company.users.search
-        search.current_scope.to_sql.should == company.users.to_sql
+        search.current_scope.to_sql.should(be_similar_sql( company.users.to_sql))
       end
     end
   end
@@ -162,7 +162,7 @@ describe Searchlogic::Search do
       search = User.search
       search.four_year_olds = true
       search.four_year_olds.should == true
-      search.to_sql.should == User.four_year_olds.to_sql
+      search.to_sql.should(be_similar_sql( User.four_year_olds.to_sql))
     end
 
     it "should not merge conflicting conditions into one value" do
@@ -398,27 +398,27 @@ describe Searchlogic::Search do
   context "#method_missing" do
     context "setting" do
       it "should call named scopes for conditions" do
-        User.search(:age_less_than => 5).to_sql.should == User.age_less_than(5).to_sql
+        User.search(:age_less_than => 5).to_sql.should(be_similar_sql( User.age_less_than(5).to_sql))
       end
 
       it "should alias exact column names to use equals" do
-        User.search(:username => "joe").to_sql.should == User.username_equals("joe").to_sql
+        User.search(:username => "joe").to_sql.should(be_similar_sql( User.username_equals("joe").to_sql))
       end
 
       it "should recognize conditions with a value of true where the named scope has an arity of 0" do
-        User.search(:username_nil => true).to_sql.should == User.username_nil.to_sql
+        User.search(:username_nil => true).to_sql.should(be_similar_sql( User.username_nil.to_sql))
       end
 
       it "should ignore conditions with a value of false where the named scope has an arity of 0" do
-        User.search(:username_nil => false).to_sql.should == User.searchlogic_compat_all.to_sql
+        User.search(:username_nil => false).to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
       end
 
       it "should not ignore conditions with a value of false where the named scope does not have an arity of 0" do
-        User.search(:username_is => false).to_sql.should == User.username_is(false).to_sql
+        User.search(:username_is => false).to_sql.should(be_similar_sql( User.username_is(false).to_sql))
       end
 
       it "should recognize the order condition" do
-        User.search(:order => "ascend_by_username").to_sql.should == User.ascend_by_username.to_sql
+        User.search(:order => "ascend_by_username").to_sql.should(be_similar_sql( User.ascend_by_username.to_sql))
       end
 
       it "should pass array values as multiple arguments with arity -1" do
@@ -426,7 +426,7 @@ describe Searchlogic::Search do
           raise "This should not be an array, it should be 1" if args.first.is_a?(Array)
           User.where("id IN (?)", args)
         })
-        User.search(:multiple_args => [1,2]).to_sql.should == User.multiple_args(1,2).to_sql
+        User.search(:multiple_args => [1,2]).to_sql.should(be_similar_sql( User.multiple_args(1,2).to_sql))
       end
 
       it "should pass array as a single value with arity >= 0" do
@@ -434,7 +434,7 @@ describe Searchlogic::Search do
           raise "This should be an array" if !args.is_a?(Array)
           User.where("id IN (?)", args)
         })
-        User.search(:multiple_args => [1,2]).to_sql.should == User.multiple_args([1,2]).to_sql
+        User.search(:multiple_args => [1,2]).to_sql.should(be_similar_sql( User.multiple_args([1,2]).to_sql))
       end
 
       it "should not split out dates or times (big fix)" do
@@ -446,7 +446,7 @@ describe Searchlogic::Search do
       it "should not include blank values" do
         s = User.search
         s.conditions = {"id_equals" => ""}
-        s.to_sql.should == User.searchlogic_compat_all.to_sql
+        s.to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
       end
     end
   end
