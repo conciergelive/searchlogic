@@ -56,9 +56,9 @@ describe Searchlogic::NamedScopes::OrConditions do
   it "should play nice with scopes on associations" do
     lambda { User.name_or_company_name_like("ben") }.should_not raise_error(Searchlogic::NamedScopes::OrConditions::NoConditionSpecifiedError)
     User.name_or_company_name_like("ben").to_sql.should(be_similar_sql(
-      "SELECT \"users\".* FROM \"users\" WHERE (users.id IN (SELECT users.id FROM \"users\" WHERE (users.name LIKE '%ben%')) OR users.id IN (SELECT users.id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')))"))
+      "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE (((users.name LIKE '%ben%')) OR (((companies.name LIKE '%ben%'))))"))
     User.company_name_or_name_like("ben").to_sql.should(be_similar_sql(
-      "SELECT \"users\".* FROM \"users\" WHERE (users.id IN (SELECT users.id FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (companies.name LIKE '%ben%')) OR users.id IN (SELECT users.id FROM \"users\" WHERE (users.name LIKE '%ben%')))"))
+      "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE ((((companies.name LIKE '%ben%'))) OR ((users.name LIKE '%ben%')))"))
     User.company_name_or_company_description_like("ben").to_sql.should(be_similar_sql(
       "SELECT \"users\".* FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (((companies.name LIKE '%ben%')) OR ((companies.description LIKE '%ben%')))"))
   end

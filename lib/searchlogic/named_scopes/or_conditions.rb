@@ -17,8 +17,8 @@ module Searchlogic
       # Annoyingly, this needs to become part of the public API since it
       # is used within the outer application.
       def merge_scopes_with_or(relations)
-        # Even though it does make logical sense, for backwards compat we must
-        # ignore relations with no conditions.
+        # Even though it doesn't make logical sense, for backwards compat we
+        # must ignore relations with no conditions.
         relations = relations.reject do |relation|
           relation.to_sql == unscoped.to_sql ||
             relation.to_sql == searchlogic_compat_all.to_sql
@@ -26,11 +26,19 @@ module Searchlogic
 
         return searchlogic_compat_all if relations.empty?
 
-        if (uniq_joins = extract_uniq_joins_values(relations))
-          joins(uniq_joins).where(combine_where_sql(relations))
-        else
-          where(combine_subquery_sql(relations))
-        end
+        base =
+          if (uniq_joins = extract_uniq_joins_values(relations))
+            # When joins don't differ (the most common case), we just pass them
+            # along (and don't cause any duplicate rows).
+            joins(*uniq_joins)
+          else
+            # This will cause duplicate rows in the output, but it matches the
+            # old behavior. The outer application already applies DISTINCT all
+            # over the place to account for this.
+            joins(*collect_uniq_outer_join_clauses_sql(relations))
+          end
+
+        base.where(combine_where_sql(relations))
       end
 
       private
@@ -159,15 +167,18 @@ module Searchlogic
         end
 
         def relation_where_sql(relation)
-          relation.where_sql.gsub(/\AWHERE /, '')
+          relation.where_sql.gsub(/\AWHERE\s*/, '')
         end
 
-        def combine_subquery_sql(relations)
-          relations.map(&method(:relation_subquery_sql)).join(' OR ')
+        def collect_uniq_outer_join_clauses_sql(relations)
+          relations
+            .flat_map(&method(:relation_join_clauses_sql))
+            .map { |join_sql| join_sql.gsub(/INNER JOIN/, 'LEFT OUTER JOIN') }
+            .uniq
         end
 
-        def relation_subquery_sql(relation)
-          "#{table_name}.id IN (#{relation.select("#{table_name}.id").to_sql})"
+        def relation_join_clauses_sql(relation)
+          relation.join_sources.map(&:to_sql)
         end
     end
   end
