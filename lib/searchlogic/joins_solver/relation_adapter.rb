@@ -1,23 +1,35 @@
 class Searchlogic::JoinsSolver::RelationAdapter
   JOIN_CLAUSE_REGEXP = %r{
-    JOIN
-    \s+
-    "?(?<source_table_name>\w+)"?
-    (
-      \s+
-      (
-        AS
-        \s+
-      )?
-      "?(?<alias>\w+)"?
-    )?
-    \s+
-    ON
+    JOIN                                  # the JOIN keyword
+    \s+                                   # whitespace
+    (?:                                   # either...
+      (?:"?(?<source_table_name>\w+)"?)   #   a possibly quoted identifier
+      |                                   #   ...or...
+      (?<subquery>                        #   something in balanced parens
+        \(                                #     an open paren
+          (?:                             #     any amount of...
+            [^\(\)]                       #       something that is not parens
+            |                             #       ...or...
+            \g<subquery>                  #       something in balanced parens
+          )*                              #
+        \)                                #     a closing paren
+      )                                   #
+    )                                     #
+    \s+                                   # whitespace
+    (?:                                   # maybe...
+      (?:                                 #   maybe...
+        AS                                #     the AS keyword
+        \s+                               #     whitespace
+      )?                                  #
+      "?(?<alias>\w+)"?                   #   a possibly quoted identifier
+      \s+                                 #   whitespace
+    )?                                    #
+    ON                                    # the ON keyword
   }xi
 
   def self.extract_table_ref_from_join(join_clause_sql)
     match = JOIN_CLAUSE_REGEXP.match(join_clause_sql)
-    raise NotImplementedError unless match
+    raise NotImplementedError, "Parse JOIN: #{join_clause_sql}" unless match
     match[:alias] || match[:source_table_name]
   end
 
