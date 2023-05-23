@@ -1,6 +1,6 @@
 appraise "rails-4.2-lts" do
   source 'https://gems.railslts.com' do
-    gem 'rails', '~> 4.2'
+    gem "rails", '~> 4.2'
     gem 'actionmailer'
     gem 'actionpack'
     gem 'activemodel'
@@ -10,6 +10,7 @@ appraise "rails-4.2-lts" do
     gem 'actionview'
     gem 'activejob'
     gem 'railslts-version'
+    gem 'rack'
   end
 end
 

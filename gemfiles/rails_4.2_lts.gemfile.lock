@@ -2,8 +2,8 @@ PATH
   remote: ..
   specs:
     searchlogic (2.5.19)
-      activerecord (>= 3.2)
-      activesupport (>= 3.2)
+      activerecord (< 5)
+      activesupport (< 5)
 
 GEM
   remote: https://rubygems.org/
@@ -157,6 +157,7 @@ DEPENDENCIES
   pry
   pry-rescue
   pry-stack_explorer (~> 0.6.0)
+  rack!
   rails (~> 4.2)!
   railslts-version!
   railties!
