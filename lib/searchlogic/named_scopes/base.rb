@@ -52,22 +52,12 @@ module Searchlogic
         impl.searchlogic_options.fetch(:arity) { impl.arity }
       end
 
-      if ::ActiveRecord::VERSION::MAJOR == 3
-        def searchlogic_compat_all
-          scoped
-        end
-      else
-        def searchlogic_compat_all
-          all
-        end
-      end
-
       def scoped_with_isolated_table_references(&block)
         merge_with_isolated_table_references(unscoped(&block))
       end
 
       def merge_with_isolated_table_references(isolated_scope)
-        JoinsSolver.merge_relations(searchlogic_compat_all, isolated_scope)
+        JoinsSolver.merge_relations(all, isolated_scope)
       end
 
       def condition?(name)

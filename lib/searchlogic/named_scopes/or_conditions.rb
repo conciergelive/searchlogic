@@ -21,10 +21,10 @@ module Searchlogic
         # must ignore relations with no conditions.
         relations = relations.reject do |relation|
           relation.to_sql == unscoped.to_sql ||
-            relation.to_sql == searchlogic_compat_all.to_sql
+            relation.to_sql == all.to_sql
         end
 
-        return searchlogic_compat_all if relations.empty?
+        return all if relations.empty?
 
         join_list =
           if (uniq_joins = extract_uniq_joins_values(relations))

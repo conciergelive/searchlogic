@@ -203,7 +203,7 @@ module Searchlogic
                   where(scope_sql, *values)
                 end
               else
-                searchlogic_compat_all
+                all
               end
             }
           else

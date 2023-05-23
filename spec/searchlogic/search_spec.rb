@@ -410,7 +410,7 @@ describe Searchlogic::Search do
       end
 
       it "should ignore conditions with a value of false where the named scope has an arity of 0" do
-        User.search(:username_nil => false).to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
+        User.search(:username_nil => false).to_sql.should(be_similar_sql( User.all.to_sql))
       end
 
       it "should not ignore conditions with a value of false where the named scope does not have an arity of 0" do
@@ -446,7 +446,7 @@ describe Searchlogic::Search do
       it "should not include blank values" do
         s = User.search
         s.conditions = {"id_equals" => ""}
-        s.to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
+        s.to_sql.should(be_similar_sql( User.all.to_sql))
       end
     end
   end

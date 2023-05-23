@@ -120,7 +120,7 @@ describe Searchlogic::NamedScopes::ColumnConditions do
   
   context "any and all conditions" do
     it "should do nothing if no arguments are passed" do
-      User.username_equals_any.to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
+      User.username_equals_any.to_sql.should(be_similar_sql( User.all.to_sql))
     end
   
     it "should treat an array and multiple arguments the same" do

@@ -7,7 +7,7 @@ module Searchlogic
       # as well, so if you have a conflict like this, you can use
       # this method directly.
       def searchlogic(conditions = {})
-        Search.new(self, searchlogic_compat_all, conditions)
+        Search.new(self, all, conditions)
       end
     end
   end
