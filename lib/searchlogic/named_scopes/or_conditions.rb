@@ -26,19 +26,25 @@ module Searchlogic
 
         return searchlogic_compat_all if relations.empty?
 
-        base =
+        join_list =
           if (uniq_joins = extract_uniq_joins_values(relations))
             # When joins don't differ (the most common case), we just pass them
             # along (and don't cause any duplicate rows).
-            joins(*uniq_joins)
+            uniq_joins
           else
             # This will cause duplicate rows in the output, but it matches the
             # old behavior. The outer application already applies DISTINCT all
             # over the place to account for this.
-            joins(*collect_uniq_outer_join_clauses_sql(relations))
+            collect_uniq_outer_join_clauses_sql(relations)
           end
 
-        base.where(combine_where_sql(relations))
+        joined =
+          if join_list.any?
+            joins(*join_list)
+          else
+            all
+          end
+        joined.where(combine_where_sql(relations))
       end
 
       private
@@ -152,7 +158,7 @@ module Searchlogic
 
           scope scope_name, searchlogic_lambda(column_type) { |*args|
             merge_scopes_with_or(
-              scopes.map { |scope| unscoped.public_send(scope, *args) }
+              scopes.map { |sc| unscoped.public_send(sc, *args) }
             )
           }
         end

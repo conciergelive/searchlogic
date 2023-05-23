@@ -118,9 +118,41 @@ module Searchlogic
           end
         end
 
-        ARColumn = ::ActiveRecord::ConnectionAdapters::Column
 
         def legacy_active_record_type_cast(type, value)
+          return nil if value.nil?
+
+          case type
+          when :string, :text
+            value
+          when :integer
+            value.to_i rescue value ? 1 : 0
+          when :float
+            ::ActiveRecord::Type::Float.new.type_cast_from_database(value)
+          when :decimal
+            ::ActiveRecord::Type::Decimal.new.type_cast_from_database(value)
+          when :datetime
+            ::ActiveRecord::Type::DateTime.new.type_cast_from_database(value)
+          when :timestamp
+            ::ActiveRecord::Type::Timestamp.new.type_cast_from_database(value)
+          when :time
+            ::ActiveRecord::Type::Time.new.type_cast_from_database(value)
+          when :date
+            ::ActiveRecord::Type::Date.new.type_cast_from_database(value)
+          when :binary
+            arcolumn.binary_to_string(value)
+          when :boolean
+            ::ActiveRecord::Type::Boolean.new.type_cast_from_database(value)
+          else
+            value
+          end
+        end
+
+        def arcolumn
+          @arcolumn ||= ::ActiveRecord::ConnectionAdapters::Column
+        end
+
+        def rails_three_type_cast(type, value)
           return nil if value.nil?
 
           case type
@@ -128,13 +160,13 @@ module Searchlogic
             when :text      then value
             when :integer   then value.to_i rescue value ? 1 : 0
             when :float     then value.to_f
-            when :decimal   then ARColumn.value_to_decimal(value)
-            when :datetime  then ARColumn.string_to_time(value)
-            when :timestamp then ARColumn.string_to_time(value)
-            when :time      then ARColumn.string_to_dummy_time(value)
-            when :date      then ARColumn.string_to_date(value)
-            when :binary    then ARColumn.binary_to_string(value)
-            when :boolean   then ARColumn.value_to_boolean(value)
+            when :decimal   then arcolumn.value_to_decimal(value)
+            when :datetime  then arcolumn.string_to_time(value)
+            when :timestamp then arcolumn.string_to_time(value)
+            when :time      then arcolumn.string_to_dummy_time(value)
+            when :date      then arcolumn.string_to_date(value)
+            when :binary    then arcolumn.binary_to_string(value)
+            when :boolean   then arcolumn.value_to_boolean(value)
             else value
           end
         end
