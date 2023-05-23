@@ -82,7 +82,7 @@ ActiveRecord::Schema.define(:version => 1) do
 end
 
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.before(:each) do
     class ::Audit < ActiveRecord::Base
       belongs_to :auditable, :polymorphic => true
@@ -157,7 +157,7 @@ Spec::Runner.configure do |config|
   end
 end
 
-Spec::Matchers.define :be_similar_sql do |expected|
+RSpec::Matchers.define :be_similar_sql do |expected|
   match do |actual|
     actual&.gsub(/\s+/, ' ')&.gsub(/\(|\)|"/, '')&.strip ==
       expected&.gsub(/\s+/, ' ')&.gsub(/\(|\)|"/, '')&.strip

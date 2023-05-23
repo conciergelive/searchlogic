@@ -56,6 +56,7 @@ GEM
     crass (1.0.6)
     date (3.3.3)
     debug_inspector (1.1.0)
+    diff-lcs (1.5.0)
     erubis (2.7.0)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
@@ -126,7 +127,14 @@ GEM
       rake (>= 0.8.7)
       thor (>= 0.18.1, < 2.0)
     rake (10.5.0)
-    rspec (1.3.2)
+    rspec (2.99.0)
+      rspec-core (~> 2.99.0)
+      rspec-expectations (~> 2.99.0)
+      rspec-mocks (~> 2.99.0)
+    rspec-core (2.99.2)
+    rspec-expectations (2.99.2)
+      diff-lcs (>= 1.1.3, < 2.0)
+    rspec-mocks (2.99.4)
     sprockets (4.1.1)
       concurrent-ruby (~> 1.0)
       rack (> 1, < 3)
@@ -162,7 +170,7 @@ DEPENDENCIES
   railslts-version!
   railties!
   rake (< 11.0)
-  rspec (~> 1.3.1)
+  rspec (~> 2)
   searchlogic!
   sqlite3 (~> 1.4.2)
   timecop (~> 0.5.9.1)

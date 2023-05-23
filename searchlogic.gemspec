@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'activesupport', '< 5'
 
   s.add_development_dependency 'rake', '< 11.0'
-  s.add_development_dependency 'rspec', '~> 1.3.1'
+  s.add_development_dependency 'rspec', '~> 2'
   s.add_development_dependency 'timecop', '~> 0.5.9.1'
   s.add_development_dependency 'sqlite3', '~> 1.4.2'
   s.add_development_dependency 'pry', '>= 0'
