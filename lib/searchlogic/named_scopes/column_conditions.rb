@@ -88,7 +88,7 @@ module Searchlogic
         end
 
         def method_missing(name, *args, &block)
-          if create_condition(name)
+          if connected? && create_condition(name)
             send(name, *args, &block)
           else
             super
