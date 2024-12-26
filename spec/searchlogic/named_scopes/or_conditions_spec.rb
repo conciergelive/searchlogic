@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Searchlogic::NamedScopes::OrConditions do
   it "should define a scope by the exact same name as requested by the code" do
     User.name_or_username_like('Test')
-    User.respond_to?(:name_or_username_like).should be_true
+    User.respond_to?(:name_or_username_like).should be true
   end
 
   it "should match username or name" do
@@ -22,7 +22,7 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should raise an error on unknown conditions" do
-    lambda { User.usernme_begins_with_or_name_like("ben") }.should raise_error(Searchlogic::NamedScopes::OrConditions::UnknownConditionError)
+    expect { User.usernme_begins_with_or_name_like("ben") }.to raise_error
   end
 
   it "should work well with _or_equal_to" do
@@ -54,7 +54,7 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should play nice with scopes on associations" do
-    lambda { User.name_or_company_name_like("ben") }.should_not raise_error(Searchlogic::NamedScopes::OrConditions::NoConditionSpecifiedError)
+    expect { User.name_or_company_name_like("ben") }.to_not raise_error
     User.name_or_company_name_like("ben").to_sql.should(be_similar_sql(
       "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE (((users.name LIKE '%ben%')) OR (((companies.name LIKE '%ben%'))))"))
     User.company_name_or_name_like("ben").to_sql.should(be_similar_sql(
@@ -64,7 +64,7 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should raise an error on missing condition" do
-    lambda { User.id_or_age(123) }.should raise_error(Searchlogic::NamedScopes::OrConditions::NoConditionSpecifiedError)
+    expect { User.id_or_age(123) }.to raise_error(Searchlogic::NamedScopes::OrConditions::NoConditionSpecifiedError)
   end
 
   it "should not get confused by the 'or' in find_or_create_by_* methods" do

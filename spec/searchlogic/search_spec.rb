@@ -514,7 +514,7 @@ describe Searchlogic::Search do
 
   context "yaml" do
     it "should load yaml" do
-      pending
+      skip
       time = Time.now
       search = User.search(:name_like => "Ben", :created_at_after => time)
       search.current_scope = {:conditions => "1=1"}

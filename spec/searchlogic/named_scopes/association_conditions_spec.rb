@@ -18,7 +18,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should allow the use of deep foreign pre-existing named scopes" do
-    pending
+    skip
     Order.scope :big_id, -> { User.where("orders.id > 100") }
     Company.users_orders_big_id.to_sql.should(be_similar_sql(
       Company.joins(users: :orders).merge(Order.big_id).to_sql))
@@ -90,7 +90,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should include optional associations" do
-    pending # this is a problem with using inner joins and left outer joins
+    skip # this is a problem with using inner joins and left outer joins
     Company.create
     company = Company.create
     user = company.users.create
@@ -99,7 +99,7 @@ describe Searchlogic::NamedScopes::AssociationConditions do
   end
 
   it "should implement exclusive scoping" do
-    pending # self joins like this confuse the join solver
+    skip # self joins like this confuse the join solver
     scope = Company.users_company_name_like("name").users_company_description_like("description")
     # scope.scope(:find)[:joins].should == [
     #   "INNER JOIN \"users\" ON companies.id = users.company_id",
