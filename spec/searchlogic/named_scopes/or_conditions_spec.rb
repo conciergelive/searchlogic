@@ -8,17 +8,17 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should match username or name" do
     User.username_or_name_like("ben").where_sql.should == 
-      "WHERE (((users.username LIKE '%ben%')) OR ((users.name LIKE '%ben%')))"
+      "WHERE (((users.username ILIKE '%ben%')) OR ((users.name ILIKE '%ben%')))"
   end
 
   it "should use the specified condition" do
     User.username_begins_with_or_name_like("ben").where_sql.should ==
-      "WHERE (((users.username LIKE 'ben%')) OR ((users.name LIKE '%ben%')))"
+      "WHERE (((users.username ILIKE 'ben%')) OR ((users.name ILIKE '%ben%')))"
   end
 
   it "should use the last specified condition" do
     User.username_or_name_like_or_id_or_age_lt(10).where_sql.should ==
-      "WHERE (((users.username LIKE '%10%')) OR ((users.name LIKE '%10%')) OR ((users.id < 10)) OR ((users.age < 10)))"
+      "WHERE (((users.username ILIKE '%10%')) OR ((users.name ILIKE '%10%')) OR ((users.id < 10)) OR ((users.age < 10)))"
   end
 
   it "should raise an error on unknown conditions" do
@@ -42,7 +42,7 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should play nice with other scopes" do
     User.username_begins_with("ben").id_gt(10).age_not_nil.username_or_name_ends_with("ben").where_sql.should ==
-      "WHERE (users.username LIKE 'ben%') AND (users.id > 10) AND (users.age IS NOT NULL) AND (((users.username LIKE '%ben')) OR ((users.name LIKE '%ben')))"
+      "WHERE (users.username ILIKE 'ben%') AND (users.id > 10) AND (users.age IS NOT NULL) AND (((users.username ILIKE '%ben')) OR ((users.name ILIKE '%ben')))"
   end
 
   it "should work with boolean conditions" do
@@ -56,11 +56,11 @@ describe Searchlogic::NamedScopes::OrConditions do
   it "should play nice with scopes on associations" do
     expect { User.name_or_company_name_like("ben") }.to_not raise_error
     User.name_or_company_name_like("ben").to_sql.should(be_similar_sql(
-      "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE (((users.name LIKE '%ben%')) OR (((companies.name LIKE '%ben%'))))"))
+      "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE (((users.name ILIKE '%ben%')) OR (((companies.name ILIKE '%ben%'))))"))
     User.company_name_or_name_like("ben").to_sql.should(be_similar_sql(
-      "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE ((((companies.name LIKE '%ben%'))) OR ((users.name LIKE '%ben%')))"))
+      "SELECT \"users\".* FROM \"users\" LEFT OUTER JOIN companies ON companies.id = users.company_id WHERE ((((companies.name ILIKE '%ben%'))) OR ((users.name ILIKE '%ben%')))"))
     User.company_name_or_company_description_like("ben").to_sql.should(be_similar_sql(
-      "SELECT \"users\".* FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (((companies.name LIKE '%ben%')) OR ((companies.description LIKE '%ben%')))"))
+      "SELECT \"users\".* FROM \"users\" INNER JOIN \"companies\" ON \"companies\".\"id\" = \"users\".\"company_id\" WHERE (((companies.name ILIKE '%ben%')) OR ((companies.description ILIKE '%ben%')))"))
   end
 
   it "should raise an error on missing condition" do
@@ -87,7 +87,7 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should work with User.search(conditions) method" do
     User.search(:username_or_name_like => 'ben').where_sql.should ==
-      "WHERE (((users.username LIKE '%ben%')) OR ((users.name LIKE '%ben%')))"
+      "WHERE (((users.username ILIKE '%ben%')) OR ((users.name ILIKE '%ben%')))"
   end
 
   it "should convert types properly when used with User.search(conditions) method" do
