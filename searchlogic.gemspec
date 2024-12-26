@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rake', '< 11.0'
   s.add_development_dependency 'rspec', '~> 2.0'
-  s.add_development_dependency 'timecop', '~> 0.5.9.1'
+  s.add_development_dependency 'timecop'
   s.add_development_dependency 'pg'
   s.add_development_dependency 'pry', '>= 0'
   s.add_development_dependency 'pry-stack_explorer', '~> 0.6.0'

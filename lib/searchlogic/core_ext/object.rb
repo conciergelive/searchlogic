@@ -32,11 +32,10 @@ module Searchlogic
       # on this, if you know of a better solution please let me know. But this is the best I could come up with,
       # without being intrusive and altering default behavior.
       def searchlogic_lambda(type = :string, options = {}, &block)
-        proc = lambda(&block)
-        proc.searchlogic_options ||= {}
-        proc.searchlogic_options[:type] = type
-        proc.searchlogic_options.merge!(options)
-        proc
+        block.searchlogic_options ||= {}
+        block.searchlogic_options[:type] = type
+        block.searchlogic_options.merge!(options)
+        block
       end
     end
   end
