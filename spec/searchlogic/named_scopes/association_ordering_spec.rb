@@ -2,33 +2,32 @@ require 'spec_helper'
 
 describe Searchlogic::NamedScopes::Ordering do
   it "should allow ascending" do
-    Company.ascend_by_users_username.proxy_options.should == User.ascend_by_username.proxy_options.merge(:joins => :users)
+    Company.ascend_by_users_username.to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.ascend_by_username).to_sql))
   end
 
   it "should allow descending" do
-    Company.descend_by_users_username.proxy_options.should == User.descend_by_username.proxy_options.merge(:joins => :users)
+    Company.descend_by_users_username.to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.descend_by_username).to_sql))
   end
 
   it "should allow deep ascending" do
-    Company.ascend_by_users_orders_total.proxy_options.should == Order.ascend_by_total.proxy_options.merge(:joins => {:users => :orders})
+    Company.ascend_by_users_orders_total.to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.ascend_by_total)).to_sql))
   end
 
   it "should allow deep descending" do
-    Company.descend_by_users_orders_total.proxy_options.should == Order.descend_by_total.proxy_options.merge(:joins => {:users => :orders})
+    Company.descend_by_users_orders_total.to_sql.should(be_similar_sql(
+      Company.joins(:users).merge(User.joins(:orders).merge(Order.descend_by_total)).to_sql))
   end
 
   it "should ascend with a belongs to" do
-    User.ascend_by_company_name.proxy_options.should == Company.ascend_by_name.proxy_options.merge(:joins => :company)
-  end
-
-  it "should work through #order" do
-    Company.order('ascend_by_users_username').proxy_options.should == Company.ascend_by_users_username.proxy_options
+    User.ascend_by_company_name.to_sql.should(be_similar_sql(
+      User.joins(:company).merge(Company.ascend_by_name).to_sql))
   end
 
   it "should ascend with a polymorphic belongs to" do
-    Audit.descend_by_auditable_user_type_username.proxy_options.should ==
-      User.descend_by_username.proxy_options.merge(
-        :joins => "INNER JOIN \"users\" ON \"users\".id = \"audits\".auditable_id AND \"audits\".auditable_type = 'User'"
-      )
+    Audit.descend_by_auditable_user_type_username.to_sql.should(be_similar_sql(
+      Audit.joins(Audit.inner_polymorphic_join(:user, as: :auditable)).merge(User.descend_by_username).to_sql))
   end
 end

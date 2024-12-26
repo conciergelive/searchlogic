@@ -58,7 +58,7 @@ module Searchlogic
         options[:html] ||= {}
         options[:html][:method] ||= :get
         options[:url] ||= url_for
-        args.unshift(:search) if args.first == search_obj
+        options[:as] ||= :search if args.first == search_obj
         args << options
       end
       super
@@ -68,8 +68,8 @@ module Searchlogic
     # is being ordered.
     def fields_for(*args, &block)
       if search_obj = args.find { |arg| arg.is_a?(Searchlogic::Search) }
-        args.unshift(:search) if args.first == search_obj
         options = args.extract_options!
+        options[:as] ||= :search if args.first == search_obj
         if !options[:skip_order_field]
           concat(content_tag("div", hidden_field_tag("#{args.first}[order]", search_obj.order), :style => "display: inline"))
         end

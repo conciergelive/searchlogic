@@ -10,7 +10,7 @@ module Searchlogic
       
       # Creates a new search object for the given class. Ex:
       #
-      #   Searchlogic::Search.new(User, {}, {:username_like => "bjohnson"})
+      #   Searchlogic::Search.new(User, User.scoped, {:username_like => "bjohnson"})
       def initialize(klass, current_scope, conditions = {})
         self.klass = klass
         self.current_scope = current_scope
@@ -19,7 +19,7 @@ module Searchlogic
       end
 
       def clone
-        self.class.new(klass, current_scope && current_scope.clone, conditions.clone)
+        self.class.new(klass, current_scope&.clone, conditions.clone)
       end
     end
   end

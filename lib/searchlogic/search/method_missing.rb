@@ -37,11 +37,11 @@ module Searchlogic
               self
             end
           else
-            scope = conditions_array.inject(klass.scoped(current_scope) || {}) do |scope, condition|
+            scope = conditions_array.inject(current_scope) do |scope, condition|
               scope_name, value = condition
               scope_name = normalize_scope_name(scope_name)
               klass.send(scope_name, value) if !klass.respond_to?(scope_name)
-              arity = klass.named_scope_arity(scope_name)
+              arity = klass.searchlogic_scope_arity(scope_name)
 
               if !arity || arity == 0
                 if value == true
@@ -55,13 +55,22 @@ module Searchlogic
                 scope.send(scope_name, value)
               end
             end
+
+            if order
+              if scope?(order)
+                scope = scope.except(:order).send(order)
+              elsif scope?(:"ascend_by_#{order}")
+                scope = scope.send(:"ascend_by_#{order}")
+              end
+            end
+
             scope.send(name, *args, &block)
           end
         end
 
         def normalize_scope_name(scope_name)
           case
-          when klass.scopes.key?(scope_name.to_sym) then scope_name.to_sym
+          when klass.searchlogic_scopes.key?(scope_name.to_sym) then scope_name.to_sym
           when klass.column_names.include?(scope_name.to_s) then "#{scope_name}_equals".to_sym
           else scope_name.to_sym
           end
@@ -77,12 +86,11 @@ module Searchlogic
         end
 
         def cast_type(name)
-          named_scope_options = scope_options(name)
-          arity = klass.named_scope_arity(name)
+          arity = klass.searchlogic_scope_arity(name)
           if !arity || arity == 0
             :boolean
           else
-            named_scope_options.respond_to?(:searchlogic_options) ? named_scope_options.searchlogic_options[:type] : :string
+            klass.searchlogic_scope_type(name)
           end
         end
 
@@ -93,11 +101,7 @@ module Searchlogic
           when Range
             Range.new(type_cast(value.first, type), type_cast(value.last, type))
           else
-            # Let's leverage ActiveRecord's type casting, so that casting is consistent
-            # with the other models.
-            column_for_type_cast = ::ActiveRecord::ConnectionAdapters::Column.new("", nil)
-            column_for_type_cast.instance_variable_set(:@type, type)
-            casted_value = column_for_type_cast.type_cast(value)
+            casted_value = legacy_active_record_type_cast(type, value)
 
             if Time.zone && casted_value.is_a?(Time)
               if value.is_a?(String)
@@ -111,6 +115,27 @@ module Searchlogic
             else
               casted_value
             end
+          end
+        end
+
+        ARColumn = ::ActiveRecord::ConnectionAdapters::Column
+
+        def legacy_active_record_type_cast(type, value)
+          return nil if value.nil?
+
+          case type
+            when :string    then value
+            when :text      then value
+            when :integer   then value.to_i rescue value ? 1 : 0
+            when :float     then value.to_f
+            when :decimal   then ARColumn.value_to_decimal(value)
+            when :datetime  then ARColumn.string_to_time(value)
+            when :timestamp then ARColumn.string_to_time(value)
+            when :time      then ARColumn.string_to_dummy_time(value)
+            when :date      then ARColumn.string_to_date(value)
+            when :binary    then ARColumn.binary_to_string(value)
+            when :boolean   then ARColumn.value_to_boolean(value)
+            else value
           end
         end
     end

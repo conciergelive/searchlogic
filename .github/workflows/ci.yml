@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test (Rails ${{ matrix.rails }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rails:
+          - '3.2_lts'
+          # - '4.2_lts'
+          # - '5.2_lts'
+          # - '6.1'
+          # - '7.0'
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails }}.gemfile
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+      - run: bundle config gems.railslts.com "${{ secrets.RAILS_LTS_SECRET }}"
+      - run: bundle install
+      - run: bin/rake

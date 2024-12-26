@@ -63,6 +63,19 @@ module Searchlogic
         super || (self != ::ActiveRecord::Base && !self.abstract_class? && !create_condition(args.first).blank?)
       end
 
+      def value_with_modifier(value, modifier)
+        case modifier
+        when :like
+          "%#{value}%"
+        when :begins_with
+          "#{value}%"
+        when :ends_with
+          "%#{value}"
+        else
+          value
+        end
+      end
+
       private
         def column_condition?(name)
           return false if name.blank?
@@ -105,7 +118,8 @@ module Searchlogic
 
           elsif boolean_condition?(name)
             column = name.to_s.gsub(/^not_/, "")
-            named_scope name, :conditions => {column => (name.to_s =~ /^not_/).nil?}
+            value = (name.to_s =~ /^not_/).nil?
+            scope name, ->(*) { where("#{table_name}.#{column}" => value) }
           end
         end
 
@@ -141,18 +155,18 @@ module Searchlogic
           when /^not_end_with/
             scope_options(condition, column, "#{table_name}.#{column.name} NOT #{match_keyword} ?", :skip_conversion => skip_conversion, :value_modifier => :ends_with)
           when "null"
-            {:conditions => "#{table_name}.#{column.name} IS NULL"}
+            -> { where("#{table_name}.#{column.name} IS NULL") }
           when "not_null"
-            {:conditions => "#{table_name}.#{column.name} IS NOT NULL"}
+            -> { where("#{table_name}.#{column.name} IS NOT NULL") }
           when "empty"
-            {:conditions => "#{table_name}.#{column.name} = ''"}
+            -> { where("#{table_name}.#{column.name} = ''") }
           when "blank"
-            {:conditions => "#{table_name}.#{column.name} = '' OR #{table_name}.#{column.name} IS NULL"}
+            -> { where("#{table_name}.#{column.name} = '' OR #{table_name}.#{column.name} IS NULL") }
           when "not_blank"
-            {:conditions => "#{table_name}.#{column.name} != '' AND #{table_name}.#{column.name} IS NOT NULL"}
+            -> { where("#{table_name}.#{column.name} != '' AND #{table_name}.#{column.name} IS NOT NULL") }
           end
 
-          named_scope("#{column.name}_#{condition}".to_sym, scope_options)
+          scope("#{column.name}_#{condition}".to_sym, scope_options)
         end
 
         # This method helps cut down on defining scope options for conditions that allow *_any or *_all conditions.
@@ -179,17 +193,17 @@ module Searchlogic
                     subs << nil
                   end
 
-                  {:conditions => [sql, *subs]}
+                  where(sql, *subs)
                 else
                   values.flatten!
                   values.collect! { |value| value_with_modifier(value, options[:value_modifier]) }
 
                   scope_sql = values.collect { |value| sql }.join(join_word)
 
-                  {:conditions => [scope_sql, *values]}
+                  where(scope_sql, *values)
                 end
               else
-                {}
+                searchlogic_compat_all
               end
             }
           else
@@ -204,21 +218,21 @@ module Searchlogic
                 sql
               end
 
-              {:conditions => [new_sql, *values]}
+              where(new_sql, *values)
             }
           end
         end
 
-        def value_with_modifier(value, modifier)
-          case modifier
-          when :like
-            "%#{value}%"
-          when :begins_with
-            "#{value}%"
-          when :ends_with
-            "%#{value}"
-          else
-            value
+        def attribute_condition(quoted_column_name, argument)
+          case argument
+            when nil   then "#{quoted_column_name} IS ?"
+            when Array, ActiveRecord::Associations::AssociationCollection, ActiveRecord::Relation then "#{quoted_column_name} IN (?)"
+            when Range then if argument.exclude_end?
+                              "#{quoted_column_name} >= ? AND #{quoted_column_name} < ?"
+                            else
+                              "#{quoted_column_name} BETWEEN ? AND ?"
+                            end
+            else            "#{quoted_column_name} = ?"
           end
         end
 

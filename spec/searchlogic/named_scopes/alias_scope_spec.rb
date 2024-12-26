@@ -8,14 +8,14 @@ describe Searchlogic::NamedScopes::AliasScope do
   it "should allow alias scopes" do
     User.create(:username => "bjohnson")
     User.create(:username => "thunt")
-    User.username_has("bjohnson").all.should == User.find_all_by_username("bjohnson")
+    User.username_has("bjohnson").all.should == User.where(username: "bjohnson").to_a
   end
   
   it "should allow alias scopes with symbols" do
     User.alias_scope :login_has, :username_has
     User.create(:username => "bjohnson")
     User.create(:username => "thunt")
-    User.login_has("bjohnson").all.should == User.find_all_by_username("bjohnson")
+    User.login_has("bjohnson").all.should == User.where(username: "bjohnson").to_a
   end
   
   it "should allow alias scopes from the search object" do
@@ -25,6 +25,6 @@ describe Searchlogic::NamedScopes::AliasScope do
   end
   
   it "should inherit alias scopes from superclasses" do
-    Class.new(User).condition?("username_has").should be_true
+    Class.new(User).condition?("username_has").should be true
   end
 end

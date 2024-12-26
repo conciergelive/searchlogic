@@ -31,38 +31,14 @@ module Searchlogic
       #
       # This feels better, it feels like our other scopes, and it provides a way to tell Searchlogic that this
       # is a safe method.
-      def alias_scope(name, options = nil)
-        alias_scopes[name.to_sym] = options
-        (class << self; self; end).instance_eval do
-          define_method name do |*args|
-            case options
-            when Symbol
-              send(options, *args)
-            else
-              options.call(*args)
-            end
-          end
-        end
+      def alias_scope(name, impl)
+        impl = method(impl) if Symbol === impl
+
+        # TODO: Print a warning asking `alias_scope` to be changed to just `scope` 
+
+        scope(name, impl)
       end
       alias_method :scope_procedure, :alias_scope
-
-      def condition?(name) # :nodoc:
-        super || alias_scope?(name)
-      end
-
-      def named_scope_options(name) # :nodoc:
-        super || alias_scopes[name.to_sym]
-      end
-
-      private
-        def alias_scopes # :nodoc:
-          read_inheritable_attribute(:alias_scopes) || write_inheritable_attribute(:alias_scopes, {})
-        end
-
-        def alias_scope?(name) # :nodoc:
-          return false if name.blank?
-          alias_scopes.key?(name.to_sym)
-        end
     end
   end
 end

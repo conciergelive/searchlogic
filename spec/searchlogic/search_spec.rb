@@ -15,7 +15,7 @@ describe Searchlogic::Search do
         company = Company.create
         user = company.users.create
         search = company.users.search
-        search.current_scope.should == company.users.scope(:find)
+        search.current_scope.to_sql.should(be_similar_sql( company.users.to_sql))
       end
     end
   end
@@ -39,8 +39,8 @@ describe Searchlogic::Search do
       search1 = company.users.search(:age_gt => 10)
       search2 = search1.clone
       search2.age_gt = 1
-      search2.all.should == User.all
-      search1.all.should == [user2]
+      search2.to_a.should == User.all.to_a
+      search1.to_a.should == [user2]
     end
 
     it "should clone properly without scope" do
@@ -49,8 +49,8 @@ describe Searchlogic::Search do
       search1 = User.search(:age_gt => 10)
       search2 = search1.clone
       search2.age_gt = 1
-      search2.all.should == User.all
-      search1.all.should == [user2]
+      search2.to_a.should == User.all.to_a
+      search1.to_a.should == [user2]
     end
   end
 
@@ -69,7 +69,7 @@ describe Searchlogic::Search do
 
     it "should use custom scopes before normalizing" do
       User.create(:username => "bjohnson")
-      User.named_scope :username, lambda { |value| {:conditions => {:username => value.reverse}} }
+      User.scope :username, lambda { |value| User.where(:username => value.reverse) }
       search1 = User.search(:username => "bjohnson")
       search2 = User.search(:username => "nosnhojb")
       search1.count.should == 0
@@ -144,7 +144,7 @@ describe Searchlogic::Search do
     end
 
     it "should allow setting pre-existing association conditions" do
-      User.named_scope :uname, lambda { |value| {:conditions => ["users.username = ?", value]} }
+      User.scope :uname, lambda { |value| User.where("users.username = ?", value) }
       search = Company.search
       search.users_uname = "bjohnson"
       search.users_uname.should == "bjohnson"
@@ -158,11 +158,11 @@ describe Searchlogic::Search do
     end
 
     it "should allow using custom conditions" do
-      User.named_scope(:four_year_olds, { :conditions => { :age => 4 } })
+      User.scope(:four_year_olds, -> { User.where(:age => 4) })
       search = User.search
       search.four_year_olds = true
       search.four_year_olds.should == true
-      search.proxy_options.should == User.four_year_olds.proxy_options
+      search.to_sql.should(be_similar_sql( User.four_year_olds.to_sql))
     end
 
     it "should not merge conflicting conditions into one value" do
@@ -176,14 +176,14 @@ describe Searchlogic::Search do
     end
 
     it "should allow setting custom conditions individually with an arity of 0" do
-      User.named_scope(:four_year_olds, :conditions => {:age => 4})
+      User.scope(:four_year_olds, -> { where(:age => 4) })
       search = User.search
       search.four_year_olds = true
       search.four_year_olds.should == true
     end
 
     it "should allow setting custom conditions individually with an arity of 1" do
-      User.named_scope(:username_should_be, lambda { |u| {:conditions => {:username => u}} })
+      User.scope(:username_should_be, lambda { |u| where(:username => u) })
       search = User.search
       search.username_should_be = "bjohnson"
       search.username_should_be.should == "bjohnson"
@@ -363,18 +363,18 @@ describe Searchlogic::Search do
     end
 
     it "should return the column name for ascending" do
-      search = User.search(:order => "ascend_by_first_name")
-      search.ordering_by.should == "first_name"
+      search = User.search(:order => "ascend_by_name")
+      search.ordering_by.should == "name"
     end
 
     it "should return the column name for descending" do
-      search = User.search(:order => "descend_by_first_name")
-      search.ordering_by.should == "first_name"
+      search = User.search(:order => "descend_by_name")
+      search.ordering_by.should == "name"
     end
 
     it "should handle symbols" do
-      search = User.search(:order => :descend_by_first_name)
-      search.ordering_by.should == "first_name"
+      search = User.search(:order => :descend_by_name)
+      search.ordering_by.should == "name"
     end
   end
 
@@ -385,12 +385,12 @@ describe Searchlogic::Search do
     end
 
     it "should return the column name for ascending" do
-      search = User.search(:order => "ascend_by_ticket_request_event_occurs_at")
+      search = User.search(:order => "ascend_by_name")
       search.ordering_direction.should == "ascend"
     end
 
     it "should return the column name for descending" do
-      search = User.search(:order => "descend_by_ticket_request_event_occurs_at")
+      search = User.search(:order => "descend_by_name")
       search.ordering_direction.should == "descend"
     end
   end
@@ -398,43 +398,43 @@ describe Searchlogic::Search do
   context "#method_missing" do
     context "setting" do
       it "should call named scopes for conditions" do
-        User.search(:age_less_than => 5).proxy_options.should == User.age_less_than(5).proxy_options
+        User.search(:age_less_than => 5).to_sql.should(be_similar_sql( User.age_less_than(5).to_sql))
       end
 
       it "should alias exact column names to use equals" do
-        User.search(:username => "joe").proxy_options.should == User.username_equals("joe").proxy_options
+        User.search(:username => "joe").to_sql.should(be_similar_sql( User.username_equals("joe").to_sql))
       end
 
       it "should recognize conditions with a value of true where the named scope has an arity of 0" do
-        User.search(:username_nil => true).proxy_options.should == User.username_nil.proxy_options
+        User.search(:username_nil => true).to_sql.should(be_similar_sql( User.username_nil.to_sql))
       end
 
       it "should ignore conditions with a value of false where the named scope has an arity of 0" do
-        User.search(:username_nil => false).proxy_options.should == {}
+        User.search(:username_nil => false).to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
       end
 
       it "should not ignore conditions with a value of false where the named scope does not have an arity of 0" do
-        User.search(:username_is => false).proxy_options.should == User.username_is(false).proxy_options
+        User.search(:username_is => false).to_sql.should(be_similar_sql( User.username_is(false).to_sql))
       end
 
       it "should recognize the order condition" do
-        User.search(:order => "ascend_by_username").proxy_options.should == User.ascend_by_username.proxy_options
+        User.search(:order => "ascend_by_username").to_sql.should(be_similar_sql( User.ascend_by_username.to_sql))
       end
 
       it "should pass array values as multiple arguments with arity -1" do
-        User.named_scope(:multiple_args, lambda { |*args|
+        User.scope(:multiple_args, searchlogic_lambda(:integer) { |*args|
           raise "This should not be an array, it should be 1" if args.first.is_a?(Array)
-          {:conditions => ["id IN (?)", args]}
+          User.where("id IN (?)", args)
         })
-        User.search(:multiple_args => [1,2]).proxy_options.should == User.multiple_args(1,2).proxy_options
+        User.search(:multiple_args => [1,2]).to_sql.should(be_similar_sql( User.multiple_args(1,2).to_sql))
       end
 
       it "should pass array as a single value with arity >= 0" do
-        User.named_scope(:multiple_args, lambda { |args|
+        User.scope(:multiple_args, searchlogic_lambda(:integer) { |args|
           raise "This should be an array" if !args.is_a?(Array)
-          {:conditions => ["id IN (?)", args]}
+          User.where("id IN (?)", args)
         })
-        User.search(:multiple_args => [1,2]).proxy_options.should == User.multiple_args([1,2]).proxy_options
+        User.search(:multiple_args => [1,2]).to_sql.should(be_similar_sql( User.multiple_args([1,2]).to_sql))
       end
 
       it "should not split out dates or times (big fix)" do
@@ -446,7 +446,7 @@ describe Searchlogic::Search do
       it "should not include blank values" do
         s = User.search
         s.conditions = {"id_equals" => ""}
-        s.proxy_options.should == {}
+        s.to_sql.should(be_similar_sql( User.searchlogic_compat_all.to_sql))
       end
     end
   end
@@ -482,9 +482,9 @@ describe Searchlogic::Search do
     end
 
     it "should implement the current scope based on a named scope" do
-      User.named_scope(:four_year_olds, :conditions => {:age => 4})
+      User.scope(:four_year_olds, -> { User.where(age: 4) })
       (3..5).each { |age| User.create(:age => age) }
-      User.four_year_olds.search.all.should == User.find_all_by_age(4)
+      User.four_year_olds.search.all.should == User.where(age: 4).to_a
     end
 
     it "should respond to count" do
@@ -504,7 +504,7 @@ describe Searchlogic::Search do
     end
 
     it "should delegate to named scopes with arity > 1" do
-      User.named_scope :paged, lambda {|start, limit| { :limit => limit, :offset => start }}
+      User.scope :paged, ->(start, limit) { User.limit(limit).offset(start) }
       User.create(:username => "bjohnson")
       search = User.search(:username => "bjohnson")
       search.paged(0, 1).count.should == 1
@@ -514,7 +514,7 @@ describe Searchlogic::Search do
 
   context "yaml" do
     it "should load yaml" do
-      pending
+      skip
       time = Time.now
       search = User.search(:name_like => "Ben", :created_at_after => time)
       search.current_scope = {:conditions => "1=1"}

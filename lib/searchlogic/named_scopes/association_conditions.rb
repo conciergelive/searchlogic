@@ -54,78 +54,31 @@ module Searchlogic
 
         def create_association_condition(association, condition_name, poly_class = nil)
           name = [association.name, poly_class && "#{poly_class.name.underscore}_type", condition_name].compact.join("_")
-          named_scope(name, association_condition_options(association, condition_name, poly_class))
+          scope(name, association_condition_options(association, condition_name, poly_class))
         end
 
-        def association_condition_options(association, association_condition, poly_class = nil)
-          klass = poly_class ? poly_class : association.klass
-          raise ArgumentError.new("The #{klass} class does not respond to the #{association_condition} scope") if !klass.respond_to?(association_condition)
-          arity = klass.named_scope_arity(association_condition)
+        def association_condition_options(association, scope_name, poly_class = nil)
+          target = poly_class || association.klass
 
-          if !arity
-            # The underlying condition doesn't require any parameters, so let's just create a simple
-            # named scope that is based on a hash.
-            options = {}
-            in_searchlogic_delegation { options = klass.send(association_condition).scope(:find) }
-            prepare_named_scope_options(options, association, poly_class)
-            options
-          else
-            scope_options = klass.named_scope_options(association_condition)
-            scope_options = scope_options.respond_to?(:searchlogic_options) ? scope_options.searchlogic_options.clone : {}
-            proc_args = arity_args(arity)
-            arg_type = scope_options.delete(:type) || :string
+          join_condition =
+            if poly_class
+              inner_polymorphic_join(poly_class.name.underscore, as: association.name)
+            else
+              association.name
+            end
 
-            eval <<-"end_eval"
-              searchlogic_lambda(:#{arg_type}, #{scope_options.inspect}) { |#{proc_args.join(",")}|
-                options = {}
+          type = target.searchlogic_scope_type(scope_name)
+          arity = target.searchlogic_scope_arity(scope_name)
 
-                in_searchlogic_delegation do
-                  scope = klass.send(association_condition, #{proc_args.join(",")})
-                  options = scope.scope(:find) if scope
-                end
+          impl = searchlogic_lambda(type, arity: arity) do |*args|
+            target_scope = target.public_send(scope_name, *args)
 
-                prepare_named_scope_options(options, association, poly_class)
-                options
-              }
-            end_eval
-          end
-        end
-
-        # Used to match the new scopes parameters to the underlying scope. This way we can disguise the
-        # new scope as best as possible instead of taking the easy way out and using *args.
-        def arity_args(arity)
-          args = []
-          if arity > 0
-            arity.times { |i| args << "arg#{i}" }
-          else
-            positive_arity = arity * -1
-            positive_arity.times do |i|
-              if i == (positive_arity - 1)
-                args << "*arg#{i}"
-              else
-                args << "arg#{i}"
-              end
+            scoped_with_isolated_table_references do
+              joins(join_condition).merge(target_scope)
             end
           end
-          args
-        end
-
-        def prepare_named_scope_options(options, association, poly_class = nil)
-          options.delete(:readonly) # AR likes to set :readonly to true when using the :joins option, we don't want that
-
-          klass = poly_class || association.klass
-          # sanitize the conditions locally so we get the right table name, otherwise the conditions will be evaluated on the original model
-          options[:conditions] = klass.sanitize_sql_for_conditions(options[:conditions]) if options[:conditions].is_a?(Hash)
-
-          poly_join = poly_class && inner_polymorphic_join(poly_class.name.underscore, :as => association.name)
-
-          if options[:joins].is_a?(String) || array_of_strings?(options[:joins])
-            options[:joins] = [poly_class ? poly_join : inner_joins(association.name), options[:joins]].flatten
-          elsif poly_class
-            options[:joins] = options[:joins].blank? ? poly_join : ([poly_join] + klass.inner_joins(options[:joins]))
-          else
-            options[:joins] = options[:joins].blank? ? association.name : {association.name => options[:joins]}
-          end
+          
+          impl
         end
     end
   end

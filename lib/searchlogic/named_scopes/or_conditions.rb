@@ -10,8 +10,35 @@ module Searchlogic
         super || or_condition?(name)
       end
 
-      def named_scope_options(name) # :nodoc:
-        super || super(or_conditions(name).try(:join, "_or_"))
+      def searchlogic_scope_impl(name) # :nodoc:
+        super || super(or_conditions(name)&.join("_or_"))
+      end
+
+      # Annoyingly, this needs to become part of the public API since it
+      # is used within the outer application.
+      def merge_scopes_with_or(relations)
+        # Even though it doesn't make logical sense, for backwards compat we
+        # must ignore relations with no conditions.
+        relations = relations.reject do |relation|
+          relation.to_sql == unscoped.to_sql ||
+            relation.to_sql == searchlogic_compat_all.to_sql
+        end
+
+        return searchlogic_compat_all if relations.empty?
+
+        base =
+          if (uniq_joins = extract_uniq_joins_values(relations))
+            # When joins don't differ (the most common case), we just pass them
+            # along (and don't cause any duplicate rows).
+            joins(*uniq_joins)
+          else
+            # This will cause duplicate rows in the output, but it matches the
+            # old behavior. The outer application already applies DISTINCT all
+            # over the place to account for this.
+            joins(*collect_uniq_outer_join_clauses_sql(relations))
+          end
+
+        base.where(combine_where_sql(relations))
       end
 
       private
@@ -23,13 +50,15 @@ module Searchlogic
           if conditions = or_conditions(name)
             create_or_condition(conditions)
             alias_name = conditions.join("_or_")
-            (class << self; self; end).class_eval { alias_method name, conditions.join("_or_") } if name != alias_name
+            singleton_class.alias_method name, conditions.join("_or_") if name != alias_name
           else
             super
           end
         end
 
         def or_conditions(name)
+          # TODO: Why do we need this now?
+          return if name.to_s.start_with?('find_')
           # First determine if we should even work on the name, we want to be as quick as possible
           # with this.
           if (parts = split_or_condition(name)).size > 1
@@ -118,51 +147,38 @@ module Searchlogic
         end
 
         def create_or_condition(scopes)
-          scopes_options = scopes.collect { |scope, *args| send(scope, *args).proxy_options }
-          # We're using first scope to determine column's type
-          scope = named_scope_options(scopes.first)
-          column_type = scope.respond_to?(:searchlogic_options) ? scope.searchlogic_options[:type] : :string
-          named_scope scopes.join("_or_"), searchlogic_lambda(column_type) { |*args|
-            merge_scopes_with_or(scopes.collect { |scope| clone.send(scope, *args) })
+          scope_name = scopes.join("_or_")
+          column_type = searchlogic_scope_type(scopes.first)
+
+          scope scope_name, searchlogic_lambda(column_type) { |*args|
+            merge_scopes_with_or(
+              scopes.map { |scope| unscoped.public_send(scope, *args) }
+            )
           }
         end
 
-        def merge_scopes_with_or(scopes)
-          options = scopes_options(scopes)
-          merged_options = merge_options(options)
-          merged_options.delete(:readonly)
-          if !merged_options[:joins].blank?
-            merged_options[:joins] = convert_joins_to_optional(merged_options[:joins])
-          else
-            merged_options.delete(:joins)
-          end
-          conditions = normalized_conditions(options)
-          if conditions.any?
-            merged_options[:conditions] = "(" + conditions.join(") OR (") + ")"
-          end
-          merged_options
+        def extract_uniq_joins_values(relations)
+          uniq_joins, *other_joins = relations.map(&:joins_values).uniq
+          uniq_joins unless other_joins.any?
         end
 
-        def scopes_options(scopes)
-          scopes.collect { |scope| with_exclusive_scope { scope.scope(:find) } }
+        def combine_where_sql(relations)
+          "(#{relations.map(&method(:relation_where_sql)).join(') OR (')})"
         end
 
-        def convert_joins_to_optional(joins)
-          joins ||= []
-
-          (joins || []).collect { |join| join.gsub(/INNER JOIN/, 'LEFT OUTER JOIN') }
+        def relation_where_sql(relation)
+          relation.where_sql.gsub(/\AWHERE\s*/, '')
         end
 
-        def merge_options(options)
-          with_exclusive_scope do
-            options.inject(scoped({:joins => "", :conditions => ""})) do |current_scope, option|
-              current_scope.scoped(option)
-            end.scope(:find)
-          end
+        def collect_uniq_outer_join_clauses_sql(relations)
+          relations
+            .flat_map(&method(:relation_join_clauses_sql))
+            .map { |join_sql| join_sql.gsub(/INNER JOIN/, 'LEFT OUTER JOIN') }
+            .uniq
         end
 
-        def normalized_conditions(options)
-          options.collect { |option| option[:conditions] && sanitize_sql(option[:conditions]) }.compact
+        def relation_join_clauses_sql(relation)
+          relation.join_sources.map(&:to_sql)
         end
     end
   end
