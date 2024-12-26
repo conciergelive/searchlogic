@@ -8,7 +8,8 @@ require "timecop"
 ENV['TZ'] = 'UTC'
 Time.zone = 'Eastern Time (US & Canada)'
 
-ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
+DB_OPTS = YAML.load(File.read(File.join(File.dirname(__FILE__), 'database.yml')).strip)
+ActiveRecord::Base.establish_connection(DB_OPTS)
 
 if ActiveRecord::VERSION::MAJOR == 3
   ActiveRecord::Base.configurations = true
@@ -16,12 +17,12 @@ end
 
 ActiveRecord::Schema.verbose = false
 ActiveRecord::Schema.define(:version => 1) do
-  create_table :audits do |t|
+  create_table :audits, force: true do |t|
     t.string :auditable_type
     t.integer :auditable_id
   end
 
-  create_table :companies do |t|
+  create_table :companies, force: true do |t|
     t.datetime :created_at
     t.datetime :updated_at
     t.string :name
@@ -29,16 +30,16 @@ ActiveRecord::Schema.define(:version => 1) do
     t.integer :users_count, :default => 0
   end
 
-  create_table :user_groups do |t|
+  create_table :user_groups, force: true do |t|
     t.string :name
   end
 
-  create_table :user_groups_users, :id => false do |t|
+  create_table :user_groups_users, :id => false, force: true do |t|
     t.integer :user_group_id, :null => false
     t.integer :user_id, :null => false
   end
 
-  create_table :users do |t|
+  create_table :users, force: true do |t|
     t.datetime :created_at
     t.datetime :updated_at
     t.integer :company_id
@@ -50,13 +51,13 @@ ActiveRecord::Schema.define(:version => 1) do
     t.datetime :whatever_at
   end
 
-  create_table :carts do |t|
+  create_table :carts, force: true do |t|
     t.datetime :created_at
     t.datetime :updated_at
     t.integer :user_id
   end
 
-  create_table :orders do |t|
+  create_table :orders, force: true do |t|
     t.datetime :created_at
     t.datetime :updated_at
     t.integer :user_id
@@ -65,7 +66,7 @@ ActiveRecord::Schema.define(:version => 1) do
     t.float :total
   end
 
-  create_table :fees do |t|
+  create_table :fees, force: true do |t|
     t.datetime :created_at
     t.datetime :updated_at
     t.string :owner_type
@@ -73,7 +74,7 @@ ActiveRecord::Schema.define(:version => 1) do
     t.float :cost
   end
 
-  create_table :line_items do |t|
+  create_table :line_items, force: true do |t|
     t.datetime :created_at
     t.datetime :updated_at
     t.integer :order_id
@@ -81,8 +82,7 @@ ActiveRecord::Schema.define(:version => 1) do
   end
 end
 
-
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.before(:each) do
     class ::Audit < ActiveRecord::Base
       belongs_to :auditable, :polymorphic => true
@@ -157,7 +157,7 @@ Spec::Runner.configure do |config|
   end
 end
 
-Spec::Matchers.define :be_similar_sql do |expected|
+RSpec::Matchers.define :be_similar_sql do |expected|
   match do |actual|
     actual&.gsub(/\s+/, ' ')&.gsub(/\(|\)|"/, '')&.strip ==
       expected&.gsub(/\s+/, ' ')&.gsub(/\(|\)|"/, '')&.strip
