@@ -135,8 +135,12 @@ class Searchlogic::JoinsSolver::RelationAdapter
     case node
     when String then node.presence
     else
-      collector = Arel::Collectors::SQLString.new
-      visitor.accept(node, collector).value.presence
+      if defined?(Arel::Collectors::SQLString)
+        collector = Arel::Collectors::SQLString.new
+        visitor.accept(node, collector).value.presence
+      else
+        visitor.accept(node).presence
+      end
     end
   end
 end

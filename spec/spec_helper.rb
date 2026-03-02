@@ -9,6 +9,9 @@ ENV['TZ'] = 'UTC'
 Time.zone = 'Eastern Time (US & Canada)'
 
 DB_OPTS = YAML.safe_load(File.read(File.join(File.dirname(__FILE__), 'database.yml')).strip, permitted_classes: [Symbol])
+if ActiveRecord::VERSION::MAJOR == 3
+  ActiveRecord::Base.configurations = true
+end
 ActiveRecord::Base.establish_connection(DB_OPTS)
 
 ActiveRecord::Schema.verbose = false
@@ -109,7 +112,11 @@ RSpec.configure do |config|
       has_many :carts, :dependent => :destroy
       has_many :orders, :dependent => :destroy
 
-      has_many :orders_big, -> { where('total > 100') }, :class_name => 'Order'
+      if ActiveRecord::VERSION::MAJOR >= 4
+        has_many :orders_big, -> { where('total > 100') }, :class_name => 'Order'
+      else
+        has_many :orders_big, :class_name => 'Order', :conditions => 'total > 100'
+      end
 
       has_many :audits, :as => :auditable
       has_and_belongs_to_many :user_groups

@@ -118,6 +118,31 @@ module Searchlogic
           end
         end
 
+        if defined?(::ActiveRecord::Type::Value)
+          # Rails 4.2+
+          def ar_type_cast(type, value)
+            { decimal: ::ActiveRecord::Type::Decimal,
+              datetime: ::ActiveRecord::Type::DateTime,
+              time: ::ActiveRecord::Type::Time,
+              date: ::ActiveRecord::Type::Date,
+              binary: ::ActiveRecord::Type::Binary,
+              boolean: ::ActiveRecord::Type::Boolean,
+            }.fetch(type).new.type_cast_from_user(value)
+          end
+        else
+          # Rails 3.2
+          ARColumn = ::ActiveRecord::ConnectionAdapters::Column
+          def ar_type_cast(type, value)
+            { decimal: :value_to_decimal,
+              datetime: :string_to_time,
+              time: :string_to_dummy_time,
+              date: :string_to_date,
+              binary: :binary_to_string,
+              boolean: :value_to_boolean,
+            }.fetch(type).then { |m| ARColumn.send(m, value) }
+          end
+        end
+
         def legacy_active_record_type_cast(type, value)
           return nil if value.nil?
 
@@ -125,12 +150,8 @@ module Searchlogic
             when :string, :text then value.to_s
             when :integer   then value.to_i rescue value ? 1 : 0
             when :float     then value.to_f
-            when :decimal   then ::ActiveRecord::Type::Decimal.new.type_cast_from_user(value)
-            when :datetime, :timestamp then ::ActiveRecord::Type::DateTime.new.type_cast_from_user(value)
-            when :time      then ::ActiveRecord::Type::Time.new.type_cast_from_user(value)
-            when :date      then ::ActiveRecord::Type::Date.new.type_cast_from_user(value)
-            when :binary    then ::ActiveRecord::Type::Binary.new.type_cast_from_user(value)
-            when :boolean   then ::ActiveRecord::Type::Boolean.new.type_cast_from_user(value)
+            when :decimal, :datetime, :timestamp, :time, :date, :binary, :boolean
+              ar_type_cast(type == :timestamp ? :datetime : type, value)
             else value
           end
         end

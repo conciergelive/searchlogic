@@ -69,12 +69,20 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should not get confused by the 'or' in find_or_create_by_* methods" do
     User.create(:name => "Fred")
-    User.find_or_create_by(name: "Fred").should be_a_kind_of User
+    if ActiveRecord::VERSION::MAJOR >= 4
+      User.find_or_create_by(name: "Fred").should be_a_kind_of User
+    else
+      User.find_or_create_by_name("Fred").should be_a_kind_of User
+    end
   end
 
   it "should not get confused by the 'or' in compound find_or_create_by_* methods" do
     User.create(:name => "Fred", :username => "fredb")
-    User.find_or_create_by(name: "Fred", username: "fredb").should be_a_kind_of User
+    if ActiveRecord::VERSION::MAJOR >= 4
+      User.find_or_create_by(name: "Fred", username: "fredb").should be_a_kind_of User
+    else
+      User.find_or_create_by_name_and_username("Fred", "fredb").should be_a_kind_of User
+    end
   end
 
   it "should work with User.search(conditions) method" do

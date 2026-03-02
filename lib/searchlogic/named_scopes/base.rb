@@ -55,7 +55,7 @@ module Searchlogic
       end
 
       def searchlogic_compat_all
-        all
+        respond_to?(:scoped) ? scoped : all
       end
 
       def scoped_with_isolated_table_references(&block)

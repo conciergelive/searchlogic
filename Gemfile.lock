@@ -2,8 +2,8 @@ PATH
   remote: .
   specs:
     searchlogic (2.6.0)
-      activerecord (>= 4.2, < 5.0)
-      activesupport (>= 4.2, < 5.0)
+      activerecord (>= 3.2, < 5.0)
+      activesupport (>= 3.2, < 5.0)
       ruby3-backward-compatibility
 
 GEM
