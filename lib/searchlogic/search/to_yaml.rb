@@ -8,21 +8,19 @@ module Searchlogic
       end
 
       module InstanceMethods
-        def to_yaml( opts = {} )
-          YAML::quick_emit( self, opts ) do |out|
-            out.map("tag:ruby.yaml.org,2002:object:Searchlogic::Search") do |map|
-              map.add('class_name', klass.name)
-              map.add('current_scope', current_scope)
-              map.add('conditions', conditions)
-            end
-          end
+        def encode_with(coder)
+          coder.tag = "!ruby/object:Searchlogic::Search"
+          coder['class_name'] = klass.name
+          coder['current_scope'] = current_scope
+          coder['conditions'] = conditions
         end
 
-        def yaml_initialize(taguri, attributes = {})
-          self.klass = attributes["class_name"].constantize
-          self.current_scope = attributes["current_scope"]
+        def init_with(coder)
+          self.klass = coder['class_name'].constantize
+          self.current_scope = coder['current_scope']
           @conditions ||= {}
-          self.conditions = attributes["conditions"]
+          self.conditions = coder['conditions']
+          self
         end
       end
     end

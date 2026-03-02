@@ -27,15 +27,17 @@ module Searchlogic
         return searchlogic_compat_all if relations.empty?
 
         base =
-          if (uniq_joins = extract_uniq_joins_values(relations))
+          if (uniq_joins = extract_uniq_joins_values(relations)) && uniq_joins.any?
             # When joins don't differ (the most common case), we just pass them
             # along (and don't cause any duplicate rows).
             joins(*uniq_joins)
-          else
+          elsif (outer_joins = collect_uniq_outer_join_clauses_sql(relations)) && outer_joins.any?
             # This will cause duplicate rows in the output, but it matches the
             # old behavior. The outer application already applies DISTINCT all
             # over the place to account for this.
-            joins(*collect_uniq_outer_join_clauses_sql(relations))
+            joins(*outer_joins)
+          else
+            searchlogic_compat_all
           end
 
         base.where(combine_where_sql(relations))

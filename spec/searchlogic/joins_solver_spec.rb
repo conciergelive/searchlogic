@@ -7,8 +7,8 @@ describe Searchlogic::JoinsSolver do
     let(:joins_solver) { Searchlogic::JoinsSolver.new(Company, current_hash, new_hash) }
 
     before do
-      joins_solver.current_find_options.stub(:to_hash) { {:current => :value} }
-      joins_solver.new_find_options.stub(:to_hash) { {:new => :value} }
+      allow(joins_solver.current_find_options).to receive(:to_hash) { {:current => :value} }
+      allow(joins_solver.new_find_options).to receive(:to_hash) { {:new => :value} }
       joins_solver.solve!
     end
 

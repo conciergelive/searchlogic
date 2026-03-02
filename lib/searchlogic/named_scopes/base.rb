@@ -24,11 +24,13 @@ module Searchlogic
         super
       end
 
-      # This is required to avoid an infinate loop when defining scopes
-      def valid_scope_name?(name)
-        return true if searchlogic_scopes.key?(name)
-
-        super
+      # This is required to avoid an infinite loop when defining scopes.
+      # Rails 4.1+ removed valid_scope_name?, so we only override if it exists.
+      if ::ActiveRecord::Base.respond_to?(:valid_scope_name?, true)
+        def valid_scope_name?(name)
+          return true if searchlogic_scopes.key?(name)
+          super
+        end
       end
 
       def searchlogic_scope_impl(scope_name)
@@ -52,14 +54,8 @@ module Searchlogic
         impl.searchlogic_options.fetch(:arity) { impl.arity }
       end
 
-      if ::ActiveRecord::VERSION::MAJOR == 3
-        def searchlogic_compat_all
-          scoped
-        end
-      else
-        def searchlogic_compat_all
-          all
-        end
+      def searchlogic_compat_all
+        all
       end
 
       def scoped_with_isolated_table_references(&block)

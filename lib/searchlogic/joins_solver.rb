@@ -17,7 +17,7 @@ class Searchlogic::JoinsSolver
 
   # Note: Unlike #solve!, this method does *not* mutate its arguments. Instead,
   # it returns a new relation.
-  def self.merge_relations(current_relation, new_relation, **merge_options)
+  def self.merge_relations(current_relation, new_relation)
     current_adapter = RelationAdapter.new(current_relation)
     new_adapter = RelationAdapter.new(new_relation)
 
@@ -28,7 +28,7 @@ class Searchlogic::JoinsSolver
     new(current_relation.klass, current_find_options, new_find_options).solve!
 
     current_adapter.replace_find_options(current_find_options)
-      .merge(new_adapter.replace_find_options(new_find_options), merge_options)
+      .merge(new_adapter.replace_find_options(new_find_options))
   end
 
   def initialize(klass, current_find_options_hash, new_find_options_hash)

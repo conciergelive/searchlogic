@@ -8,12 +8,8 @@ require "timecop"
 ENV['TZ'] = 'UTC'
 Time.zone = 'Eastern Time (US & Canada)'
 
-DB_OPTS = YAML.load(File.read(File.join(File.dirname(__FILE__), 'database.yml')).strip)
+DB_OPTS = YAML.safe_load(File.read(File.join(File.dirname(__FILE__), 'database.yml')).strip, permitted_classes: [Symbol])
 ActiveRecord::Base.establish_connection(DB_OPTS)
-
-if ActiveRecord::VERSION::MAJOR == 3
-  ActiveRecord::Base.configurations = true
-end
 
 ActiveRecord::Schema.verbose = false
 ActiveRecord::Schema.define(:version => 1) do
@@ -83,6 +79,13 @@ ActiveRecord::Schema.define(:version => 1) do
 end
 
 RSpec.configure do |config|
+  config.expect_with :rspec do |expectations|
+    expectations.syntax = [:should, :expect]
+  end
+  config.mock_with :rspec do |mocks|
+    mocks.syntax = [:should, :expect]
+  end
+
   config.before(:each) do
     class ::Audit < ActiveRecord::Base
       belongs_to :auditable, :polymorphic => true
@@ -106,11 +109,7 @@ RSpec.configure do |config|
       has_many :carts, :dependent => :destroy
       has_many :orders, :dependent => :destroy
 
-      if ActiveRecord::VERSION::MAJOR == 3
-        has_many :orders_big, :class_name => 'Order', :conditions => 'total > 100'
-      else
-        has_many :orders_big, -> { where('total > 100') }, :class_name => 'Order'
-      end
+      has_many :orders_big, -> { where('total > 100') }, :class_name => 'Order'
 
       has_many :audits, :as => :auditable
       has_and_belongs_to_many :user_groups
@@ -152,7 +151,9 @@ RSpec.configure do |config|
       remove_const :Fee
       remove_const :LineItem
 
-      ActiveSupport::Dependencies::Reference.clear!
+      if ActiveSupport::Dependencies.respond_to?(:reference)
+        ActiveSupport::Dependencies::Reference.clear!
+      end
     end
   end
 end

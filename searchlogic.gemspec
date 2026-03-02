@@ -12,15 +12,17 @@ Gem::Specification.new do |s|
   s.summary     = %q{Searchlogic makes using ActiveRecord named scopes easier and less repetitive.}
   s.description = %q{Searchlogic makes using ActiveRecord named scopes easier and less repetitive.}
 
-  s.add_dependency 'activerecord', '>= 3.2', '< 4.0'
-  s.add_dependency 'activesupport', '>= 3.2', '< 4.0'
+  s.add_dependency 'activerecord', '>= 4.2', '< 5.0'
+  s.add_dependency 'activesupport', '>= 4.2', '< 5.0'
 
-  s.add_development_dependency 'rake', '< 11.0'
-  s.add_development_dependency 'rspec', '~> 2.0'
+  s.add_dependency 'ruby3-backward-compatibility'
+
+  s.add_development_dependency 'rake'
+  s.add_development_dependency 'rspec', '~> 3.0'
   s.add_development_dependency 'timecop'
   s.add_development_dependency 'pg'
   s.add_development_dependency 'pry', '>= 0'
-  s.add_development_dependency 'pry-stack_explorer', '~> 0.6.0'
+  s.add_development_dependency 'pry-stack_explorer'
   s.add_development_dependency 'pry-rescue', '>= 0'
   s.add_development_dependency 'appraisal'
 

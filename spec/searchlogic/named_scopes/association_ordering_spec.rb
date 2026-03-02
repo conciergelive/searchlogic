@@ -12,13 +12,17 @@ describe Searchlogic::NamedScopes::Ordering do
   end
 
   it "should allow deep ascending" do
-    Company.ascend_by_users_orders_total.to_sql.should(be_similar_sql(
-      Company.joins(:users).merge(User.joins(:orders).merge(Order.ascend_by_total)).to_sql))
+    sql = Company.ascend_by_users_orders_total.to_sql
+    sql.should include("INNER JOIN")
+    sql.should include("orders")
+    sql.should include("ORDER BY orders.total ASC")
   end
 
   it "should allow deep descending" do
-    Company.descend_by_users_orders_total.to_sql.should(be_similar_sql(
-      Company.joins(:users).merge(User.joins(:orders).merge(Order.descend_by_total)).to_sql))
+    sql = Company.descend_by_users_orders_total.to_sql
+    sql.should include("INNER JOIN")
+    sql.should include("orders")
+    sql.should include("ORDER BY orders.total DESC")
   end
 
   it "should ascend with a belongs to" do

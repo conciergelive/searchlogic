@@ -22,7 +22,7 @@ describe Searchlogic::NamedScopes::OrConditions do
   end
 
   it "should raise an error on unknown conditions" do
-    expect { User.usernme_begins_with_or_name_like("ben") }.to raise_error
+    expect { User.usernme_begins_with_or_name_like("ben") }.to raise_error(Searchlogic::NamedScopes::OrConditions::UnknownConditionError)
   end
 
   it "should work well with _or_equal_to" do
@@ -69,20 +69,12 @@ describe Searchlogic::NamedScopes::OrConditions do
 
   it "should not get confused by the 'or' in find_or_create_by_* methods" do
     User.create(:name => "Fred")
-    if ::ActiveRecord::VERSION::MAJOR == 3
-     User.find_or_create_by_name("Fred").should be_a_kind_of User
-    else
-      User.find_or_create_by(name: "Fred").should be_a_kind_of User
-    end
+    User.find_or_create_by(name: "Fred").should be_a_kind_of User
   end
 
   it "should not get confused by the 'or' in compound find_or_create_by_* methods" do
     User.create(:name => "Fred", :username => "fredb")
-    if ::ActiveRecord::VERSION::MAJOR == 3
-      User.find_or_create_by_name_and_username("Fred", "fredb").should be_a_kind_of User
-    else
-      User.find_or_create_by(name: "Fred", username: "fredb").should be_a_kind_of User
-    end
+    User.find_or_create_by(name: "Fred", username: "fredb").should be_a_kind_of User
   end
 
   it "should work with User.search(conditions) method" do

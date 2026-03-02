@@ -45,7 +45,7 @@ class Searchlogic::JoinsSolver::RelationAdapter
     @core, *other_cores = arel.ast.cores
     raise NotImplementedError if other_cores.any?
 
-    @visitor = Arel::Visitors::ToSql.new(relation.connection)
+    @visitor = relation.connection.visitor
   end
 
   def conflicting_table_refs?
@@ -132,6 +132,11 @@ class Searchlogic::JoinsSolver::RelationAdapter
   end
 
   def to_sql(node)
-    visitor.accept(node).presence
+    case node
+    when String then node.presence
+    else
+      collector = Arel::Collectors::SQLString.new
+      visitor.accept(node, collector).value.presence
+    end
   end
 end
