@@ -64,7 +64,11 @@ class Searchlogic::JoinsSolver::RelationAdapter
   end
 
   def replace_find_options(new_find_options)
-    new_relation = relation.except(:select, :joins, :where, :order, :group)
+    # `:bind` is dropped alongside `:where` because `conditions_sql` inlines
+    # bind values directly into the rebuilt WHERE string; leaving the original
+    # bind_values on the relation would cause PG to receive params with no
+    # matching `$N` placeholder.
+    new_relation = relation.except(:select, :joins, :where, :order, :group, :bind)
 
     if (select = new_find_options[:select])
       new_relation = new_relation.select(select)
@@ -112,7 +116,46 @@ class Searchlogic::JoinsSolver::RelationAdapter
   end
 
   def conditions_sql
-    to_sql_list(wheres, ' AND ')
+    return nil if wheres.empty?
+
+    if defined?(Arel::Collectors::Bind)
+      render_conditions_with_inlined_binds
+    else
+      to_sql_list(wheres, ' AND ')
+    end
+  end
+
+  # Renders all where nodes in a single pass through an `Arel::Collectors::Bind`
+  # so the collector preserves BindParam AST nodes as parts. We then call
+  # `compile` to substitute them with quoted values from `relation.bind_values`.
+  #
+  # The previous implementation rendered each where through the connection's
+  # Arel visitor with an `SQLString` collector, which emits `$1`, `$2`, ...
+  # placeholders for BindParam nodes. The bind metadata was then lost when the
+  # resulting string was re-applied via `.where(conditions_sql)` — leaving raw
+  # `$N` tokens in the SQL that no longer corresponded to any bound parameter.
+  def render_conditions_with_inlined_binds
+    collector = Arel::Collectors::Bind.new
+    rendered_any = false
+
+    wheres.each do |node|
+      case node
+      when String
+        next if node.empty?
+        collector << ' AND ' if rendered_any
+        collector << node
+      else
+        collector << ' AND ' if rendered_any
+        visitor.accept(node, collector)
+      end
+      rendered_any = true
+    end
+
+    return nil unless rendered_any
+
+    conn = relation.connection
+    quoted_binds = relation.bind_values.map { |bv| conn.quote(*bv.reverse) }
+    collector.compile(quoted_binds).presence
   end
 
   def order_sql
