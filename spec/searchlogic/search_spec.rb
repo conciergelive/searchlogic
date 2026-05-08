@@ -344,6 +344,23 @@ describe Searchlogic::Search do
         search.created_at_after.should_not be_nil
         search.created_at_after.should == Time.zone.local(2000, 1, 1)
       end
+
+      # Plain lambdas defined as scopes (without explicit searchlogic_options)
+      # default to type :string via lib/searchlogic/core_ext/proc.rb. The
+      # :string cast must remain a passthrough -- otherwise non-string
+      # arguments (AR records, dates, etc.) get coerced via #to_s before the
+      # scope's lambda runs, which silently breaks any scope that expects a
+      # real object.
+      it "should not stringify non-string values for plain-lambda scopes" do
+        User.scope(:created_by, lambda { |user| where(:company_id => user.company_id) })
+
+        company = Company.create
+        user = User.create(:company => company)
+        search = User.search
+        search.created_by = user
+
+        search.created_by.should equal(user)
+      end
     end
   end
 

@@ -147,7 +147,7 @@ module Searchlogic
           return nil if value.nil?
 
           case type
-            when :string, :text then value.to_s
+            when :string, :text then value
             when :integer   then value.to_i rescue value ? 1 : 0
             when :float     then value.to_f
             when :decimal, :datetime, :timestamp, :time, :date, :binary, :boolean
