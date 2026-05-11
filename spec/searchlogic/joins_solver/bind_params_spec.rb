@@ -14,7 +14,10 @@ require "spec_helper"
 # `prepared_statements: false`, the adapter sends an empty params array and
 # PG raises PG::ProtocolViolation: bind message supplies 0 parameters, but
 # prepared statement requires 1.
-describe "Searchlogic::JoinsSolver bind-param handling" do
+# The leak is specific to Rails 4's BindParam AST nodes; on Rails 3.2 the
+# same `where(col: val)` produces an inlined SqlLiteral, so there's nothing
+# to leak and the setup assertions (`bind_values.not_to be_empty`) don't hold.
+describe "Searchlogic::JoinsSolver bind-param handling", if: ActiveRecord::VERSION::MAJOR >= 4 do
   before do
     @company = Company.create!(name: "Acme")
     @user = User.create!(company: @company, username: "alice", age: 30)
