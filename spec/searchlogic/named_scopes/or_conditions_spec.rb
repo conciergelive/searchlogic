@@ -90,6 +90,42 @@ describe Searchlogic::NamedScopes::OrConditions do
       "WHERE (((users.username ILIKE '%ben%')) OR ((users.name ILIKE '%ben%')))"
   end
 
+  # In Rails 4.x, equality conditions like `where(company_id: 5)` get emitted
+  # as BindParam nodes in the Arel AST -- `relation.where_sql` therefore
+  # returns "? placeholders" with the values held separately in
+  # `relation.bind_values`. The previous `merge_scopes_with_or` concatenated
+  # the raw where_sql strings via `base.where(...)`, which discarded the
+  # bind metadata and left `?` tokens in the final SQL.
+  context "when merging relations whose wheres use bind values" do
+    it "inlines bind values rather than leaving raw ? placeholders" do
+      company = Company.create!(name: "Acme")
+      other_company = Company.create!(name: "Other")
+
+      merged = User.merge_scopes_with_or([
+        User.where(company_id: company.id),
+        User.where(company_id: other_company.id),
+      ])
+
+      expect(merged.to_sql).not_to match(/\?/)
+      expect(merged.to_sql).to include(company.id.to_s, other_company.id.to_s)
+    end
+
+    it "produces an executable relation" do
+      company = Company.create!(name: "Acme")
+      other_company = Company.create!(name: "Other")
+      User.create!(company: company, name: "alice")
+      User.create!(company: other_company, name: "bob")
+
+      merged = User.merge_scopes_with_or([
+        User.where(company_id: company.id),
+        User.where(company_id: other_company.id),
+      ])
+
+      expect { merged.to_a }.not_to raise_error
+      expect(merged.to_a.map(&:name)).to contain_exactly("alice", "bob")
+    end
+  end
+
   it "should convert types properly when used with User.search(conditions) method" do
     User.search(:id_or_age_lte => '10').where_sql.should ==
       "WHERE (((users.id <= 10)) OR ((users.age <= 10)))"

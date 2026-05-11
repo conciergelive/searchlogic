@@ -169,7 +169,18 @@ module Searchlogic
         end
 
         def relation_where_sql(relation)
-          relation.where_sql.gsub(/\AWHERE\s*/, '')
+          sql = relation.where_sql.gsub(/\AWHERE\s*/, '')
+
+          # On Rails 4.x, equality conditions like `where(col: val)` produce
+          # BindParam nodes -- `where_sql` emits `?` placeholders with the
+          # values held in `relation.bind_values`. We need to inline them
+          # before concatenating, otherwise the rebuilt `base.where(...)`
+          # string would carry raw `?` tokens with no binds attached.
+          return sql unless relation.respond_to?(:bind_values) && relation.bind_values.any?
+
+          conn = relation.klass.connection
+          binds = relation.bind_values.dup
+          sql.gsub('?') { conn.quote(*binds.shift.reverse) }
         end
 
         def collect_uniq_outer_join_clauses_sql(relations)
